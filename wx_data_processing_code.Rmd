@@ -1,0 +1,134 @@
+---
+title: "wx_data_processing_code"
+author: "Erika Lee"
+date: "2024-01-30"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+packages <- c('tidyverse',
+              'lterdatasampler', 'dplyr', 'ggplot2', 'readr', 'readxl', 'lubridate', 'plotly', 'openxlsx', 'plotly')
+
+install.packages(packages)
+
+library(tidyverse)
+library(lterdatasampler)
+library(dplyr)
+library(ggplot2)
+library(readr)
+library(readxl)
+library(lubridate)
+library(plotly)
+library(openxlsx)
+library(plotly)
+library(rstatix)
+
+setwd("/Volumes/wcnr-network/Research/Kampf/Private/field_data")
+```
+
+## Weather Station Data
+
+### Trans Burned Met (Forested)
+
+```{r}
+#trans_burned_met weather station data
+trans_burned_met=read_excel('nsf/trans_burned_met/trans_burned_met_composite.xlsx')
+
+trans_burned_met$Date = as_date(trans_burned_met$datetime, tz="MST", format="%m/%d/%Y %H:%M")
+```
+
+### Trans Burned (Clearing) - Hourly
+
+```{r}
+#read in trans_burned weather station data
+trans_burned_wx_composite = read_excel('nsf/trans_burned/trans_burned_wx_composite.xlsx')
+
+#convert datetime column to date/time
+trans_burned_wx_composite$datetime <- as.POSIXct(trans_burned_wx_composite$datetime, tz = "MST", format = "%m/%d/%Y %H:%M")
+```
+
+### Trans Burned (Clearing) - 15 min
+
+```{r}
+#read in 15 minute trans_burned weather station data, minus the geonor data
+
+trans_burned_wx_15min = read_excel('nsf/trans_burned/trans_burned_wx_15min.xlsx')
+
+#convert datetime column to date/time
+trans_burned_wx_15min$datetime <- as.POSIXct(trans_burned_wx_15min$datetime, tz = "MST", format = "%m/%d/%Y %H:%M")
+```
+
+### Trans Burned Geonor
+
+```{r}
+#read in geonor data
+trans_burned_geonor_composite = read_excel('nsf/trans_burned/trans_burned_geonor_composite.xlsx')
+
+#convert datetime column to date/time
+trans_burned_geonor_composite$datetime <- as.POSIXct(trans_burned_geonor_composite$datetime, tz = "MST", format = "%m/%d/%Y %H:%M")
+
+#remove NAN data
+trans_burned_geonor_composite <- trans_burned_geonor_composite %>%
+  filter(datetime >= "2023-11-03 05:40:00") %>%
+  slice(-(1:11))
+```
+
+### Pers Burned - Hourly
+
+```{r}
+#pers_burned weather station data - set up
+pers_burned_wx_fulldata=read_excel('nsf/pers_burned/pers_burned_wx_composite.xlsx')
+
+pers_burned_wx <- pers_burned_wx_fulldata %>%
+  mutate(datetime = if_else(grepl("^\\d{4}-\\d{2}-\\d{2}$", TIMESTAMP), ymd(TIMESTAMP), ymd_hms(TIMESTAMP))) %>%
+  #above line parses out 0:00:00 timestamps (12 am)
+  select(datetime, everything()) %>%
+  select(-c(TIMESTAMP, RECORD))
+```
+
+### Pers Burned - 15 min
+
+```{r}
+pers_burned_wx_15min_fulldata=read_excel('nsf/pers_burned/pers_burned_wx_15min_composite.xlsx')
+
+pers_burned_wx_15min <- pers_burned_wx_15min_fulldata %>%
+  mutate(datetime = if_else(grepl("^\\d{4}-\\d{2}-\\d{2}$", TIMESTAMP), ymd(TIMESTAMP), ymd_hms(TIMESTAMP))) %>%
+  filter(datetime >= ymd_hms("2023-12-07 00:00:00") & datetime <= ymd_hms("2024-01-21 00:00:00")) %>%
+  select(datetime, everything()) %>%
+  select(-TIMESTAMP)
+
+pers_burned_rad <- pers_burned_wx_15min %>%
+    drop_na() %>%
+  filter(datetime >= "2023-12-07 00:00:00" & datetime <= "2024-01-10 00:00:00") %>%
+  select("datetime","SWin_Avg", "SWout_Avg")
+
+glimpse(pers_burned_rad)
+glimpse(pers_b_aspects)
+```
+
+### Pers Unburned - Hourly
+
+```{r}
+#pers_burned weather station data
+pers_unburned_fulldata=read_excel('nsf/pers_unburned/pers_unburned_wx_composite.xlsx')
+
+pers_unburned <- pers_unburned_fulldata %>%
+  mutate(datetime = if_else(grepl("^\\d{4}-\\d{2}-\\d{2}$", TIMESTAMP), ymd(TIMESTAMP), ymd_hms(TIMESTAMP))) %>%
+  #above line parses out 0:00:00 timestamps (12 am)
+  select(datetime, everything()) %>%
+  select(-c(TIMESTAMP, RECORD))
+```
+
+### Pers Burned Solar Radiation Data
+
+```{r}
+#creating new dataframe for specific dates, to compare to 105E South sensors
+pers_burned_rad <- pers_burned_wx_15min %>%
+    drop_na() %>%
+  filter(datetime >= "2023-12-07 00:00:00" & datetime <= "2024-01-10 00:00:00") %>%
+  select("TIMESTAMP", "SWin_Avg", "SWout_Avg")
+```
