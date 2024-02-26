@@ -1,0 +1,1002 @@
+---
+title: "wx_station_data"
+author: "Erika Lee"
+date: "2023-11-29"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+#installing packages / set working directory
+packages <- c('tidyverse',
+              'lterdatasampler', 'dplyr', 'ggplot2', 'readr', 'readxl', 'lubridate', 'plotly', 'openxlsx', 'plotly', 'rstatix')
+
+install.packages(packages)
+
+library(tidyverse)
+library(lterdatasampler)
+library(dplyr)
+library(ggplot2)
+library(readr)
+library(readxl)
+library(lubridate)
+library(plotly)
+library(openxlsx)
+library(plotly)
+library(rstatix)
+
+setwd("/Volumes/wcnr-network/Research/Kampf/Private/field_data")
+```
+
+## Tree Temp Data
+
+### 105E Pers_b Tree Temp Data
+
+```{r}
+#read in temperature data
+pers_b_tree_composite=read_excel("nsf/105E_pers_burned/105E_pers_b_composite.xlsx")
+
+#filter temp data to full data frame
+pers_b_tree_fulldata <- pers_b_tree_composite %>%
+  mutate(datetime = ymd_hms(TIMESTAMP)) %>%
+  select(datetime, everything()) %>%
+  select(-c(TIMESTAMP, RECORD))
+
+#adding in an aspect column - WITH ONLY 14 SENSORS!
+pers_b_aspects <- pers_b_tree_fulldata %>%
+  pivot_longer(cols = starts_with("Temp"),
+               names_to = "sensor_id",
+               values_to = "temp") %>%
+  #add in aspect column
+  mutate(aspect = ifelse(
+    sensor_id %in% c(
+      "Temp_C_Avg(1)",
+      "Temp_C_Avg(5)",
+      "Temp_C_Avg(9)",
+      "Temp_C_Avg(13)", "Temp_C_Avg(15)"
+    ),
+    "north",
+    "other"
+  )) %>%
+  mutate(aspect = ifelse(
+    sensor_id %in% c(
+      "Temp_C_Avg(2)",
+      "Temp_C_Avg(6)",
+      "Temp_C_Avg(10)",
+      "Temp_C_Avg(14)", "Temp_C_Avg(16)"),
+    "south",
+    aspect
+  )) %>%
+  mutate(aspect = ifelse(
+    sensor_id %in% c("Temp_C_Avg(3)", "Temp_C_Avg(7)", "Temp_C_Avg(11)"),
+    "charred",
+    aspect
+  )) %>%
+  mutate(aspect = ifelse(
+    sensor_id %in% c("Temp_C_Avg(4)", "Temp_C_Avg(8)", "Temp_C_Avg(12)"),
+    "uncharred",
+    aspect
+  )) %>%
+  #adding in sensor name column
+  mutate(tree_name = ifelse(
+    sensor_id %in% c(
+      "Temp_C_Avg(1)",
+      "Temp_C_Avg(2)",
+      "Temp_C_Avg(3)",
+      "Temp_C_Avg(4)"
+    ),
+    "gb_w",
+    "other"
+  )) %>%
+  mutate(tree_name = ifelse(
+    sensor_id %in% c(
+      "Temp_C_Avg(5)",
+      "Temp_C_Avg(6)",
+      "Temp_C_Avg(7)",
+      "Temp_C_Avg(8)"
+    ),
+    "gb_e",
+    tree_name
+  )) %>%
+  mutate(tree_name = ifelse(
+    sensor_id %in% c(
+      "Temp_C_Avg(9)",
+      "Temp_C_Avg(10)",
+      "Temp_C_Avg(11)",
+      "Temp_C_Avg(12)"
+    ),
+    "gb_s",
+    tree_name
+  )) %>%
+  mutate(tree_name = ifelse(
+    sensor_id %in% c("Temp_C_Avg(13)", "Temp_C_Avg(14)"),
+    "db_n",
+    tree_name
+  )) %>%
+  mutate(tree_name = ifelse(
+    sensor_id %in% c("Temp_C_Avg(15)", "Temp_C_Avg(16)"),
+    "db_s",
+    tree_name
+  ))
+
+#creating dataframes for individual tree
+pers_gb_w <- pers_b_aspects %>%
+  filter(sensor_id == c("Temp_C_Avg(1)", "Temp_C_Avg(2)", "Temp_C_Avg(3)", "Temp_C_Avg(4)"))
+
+pers_gb_e <- pers_b_aspects %>%
+  filter(sensor_id == c("Temp_C_Avg(5)", "Temp_C_Avg(6)", "Temp_C_Avg(7)", "Temp_C_Avg(8)"))
+
+pers_gb_s <- pers_b_aspects %>%
+  filter(sensor_id == c("Temp_C_Avg(9)", "Temp_C_Avg(10)", "Temp_C_Avg(11)", "Temp_C_Avg(12)"))
+
+pers_db_n <- pers_b_aspects %>%
+  filter(sensor_id == c("Temp_C_Avg(13)", "Temp_C_Avg(14)"))
+
+pers_db_s <- pers_b_aspects %>%
+  filter(sensor_id == c("Temp_C_Avg(15)", "Temp_C_Avg(16)"))
+
+#exporting aspect data as excel
+
+write.xlsx(pers_b_aspects, "nsf/105E_pers_burned/105E_pers_b_aspects.xlsx")
+```
+
+### 105E Pers_b Plots
+
+```{r}
+#colors for sensors
+color_data_pers <- data.frame(tree_name = c("gb_e", "gb_w", "gb_s", "db_n", "db_s"), color = c("blue", "orange", "red", "black", "purple"))
+
+#individual tree timeseries plots
+pers_north <- pers_b_aspects %>%
+  filter(aspect == "north") %>%
+  ggplot() +
+  geom_line(aes(x = datetime, y = temp, color = tree_name, alpha = 0.5)) +
+  labs(x = "Datetime", y = "Temp (C)", title = "Pers North Sensors") +
+  scale_color_manual(values = setNames(color_data_pers$color, color_data_pers$tree_name))
+
+ggplotly(pers_north)
+
+pers_south <- pers_b_aspects %>%
+  filter(aspect == "south") %>%
+  ggplot() +
+  geom_line(aes(x = datetime, y = temp, color = tree_name, alpha = 0.5)) +
+  labs(x = "Datetime", y = "Temp (C)", title = "Pers South Sensors") +
+  scale_color_manual(values = setNames(color_data_pers$color, color_data_pers$tree_name))
+
+ggplotly(pers_south)
+
+pers_charred <- pers_b_aspects %>%
+  filter(aspect == "charred") %>%
+  ggplot() +
+  geom_line(aes(x = datetime, y = temp, color = tree_name, alpha = 0.5)) +
+  labs(x = "Datetime", y = "Temp (C)", title = "Pers Charred Sensors") +
+  scale_color_manual(values = setNames(color_data_pers$color, color_data_pers$tree_name))
+
+ggplotly(pers_charred)
+
+pers_uncharred <- pers_b_aspects %>%
+  filter(aspect == "uncharred") %>%
+  ggplot() +
+  geom_line(aes(x = datetime, y = temp, color = tree_name, alpha = 0.5)) +
+  labs(x = "Datetime", y = "Temp (C)", title = "Pers Uncharred Sensors") +
+  scale_color_manual(values = setNames(color_data_pers$color, color_data_pers$tree_name))
+
+ggplotly(pers_uncharred)
+
+##pers_gb_w plot
+pers_gb_w_timeseries <- pers_gb_w %>%
+  ggplot() +
+  geom_line(aes(x = datetime, y = temp, color = aspect)) +
+  #facet_wrap(~aspect) + 
+  labs(x = "Datetime", y = "Temp (C)", title = "pers_gb_w")
+  #scale_x_datetime(limits = c(as.POSIXct("2023-11-03 00:00:00"), as.POSIXct("2023-11-10 00:00:00")))
+
+ggplotly(pers_gb_w_timeseries)
+
+##pers_gb_e plot
+pers_gb_e_timeseries <- pers_gb_e %>%
+  ggplot() +
+  geom_line(aes(x = datetime, y = temp, color = aspect)) +
+  #facet_wrap(~aspect) + 
+  labs(x = "Datetime", y = "Temp (C)", title = "pers_gb_e")
+  #scale_x_datetime(limits = c(as.POSIXct("2023-11-03 00:00:00"), as.POSIXct("2023-11-10 00:00:00")))
+ 
+ggplotly(pers_gb_e_timeseries)
+
+##pers_gb_s plot
+pers_gb_s_timeseries <- pers_gb_s %>%
+  ggplot() +
+  geom_line(aes(x = datetime, y = temp, color = aspect)) +
+  #facet_wrap(~aspect) + 
+  labs(x = "Datetime", y = "Temp (C)", title = "pers_gb_s")
+  #scale_x_datetime(limits = c(as.POSIXct("2023-11-03 00:00:00"), as.POSIXct("2023-11-10 00:00:00")))
+ 
+ggplotly(pers_gb_s_timeseries)
+
+##pers_db_n plot
+pers_db_n_timeseries <- pers_db_n %>%
+  ggplot() +
+  geom_line(aes(x = datetime, y = temp, color = aspect)) +
+  #facet_wrap(~aspect) + 
+  labs(x = "Datetime", y = "Temp (C)", title = "pers_db_n")
+  #scale_x_datetime(limits = c(as.POSIXct("2023-11-03 00:00:00"), as.POSIXct("2023-11-10 00:00:00")))
+ 
+ggplotly(pers_db_n_timeseries)
+
+#pers_db_s plot
+pers_db_s_timeseries <- pers_db_s %>%
+  ggplot() +
+  geom_line(aes(x = datetime, y = temp, color = aspect)) +
+  #facet_wrap(~aspect) + 
+  labs(x = "Datetime", y = "Temp (C)", title = "pers_db_s")
+  #scale_x_datetime(limits = c(as.POSIXct("2023-12-06 14:00:00"), as.POSIXct("2023-12-21 13:15:00")))
+
+ggplotly(pers_db_s_timeseries)
+
+#timeseries
+pers_timeseries <- pers_b_aspects %>%
+  ggplot() +
+  geom_line(aes(x = datetime, y = temp, color = aspect)) +
+  facet_wrap(~sensor_name) + 
+  labs(x = "Datetime", y = "Temp (C)", title = "pers_b_timeseries") +
+  #datetime scale, so you can see patterns better
+  scale_x_datetime(limits = c(as.POSIXct("2023-11-03 00:00:00"), as.POSIXct("2023-11-10 00:00:00")))
+
+print(pers_timeseries)
+
+#timeseries plot
+pers_b_timeseries <- pers_b_aspects %>%
+  ggplot() +
+  geom_line(aes(x = datetime, y = temp)) + facet_wrap("aspect")
+
+plot(pers_b_timeseries)
+
+#histogram - all sensors
+pers_b_histogram <- pers_b_aspects %>%
+  ggplot(aes(x = temp)) +
+  geom_histogram() + facet_wrap( ~ aspect, scale = "free_x") +
+  labs(title = "Histogram of Temperature Across Sites",
+       x = "Temperature (C)",
+       y = "Frequency") +
+  theme_minimal()
+    # geom_vline(aes(xintercept = mean_temp), price_stats, color = "red", linewidth = 2)
+
+print(pers_b_histogram)
+```
+
+### 105E Pers_b Data Exploration
+
+```{r}
+#pers_north_GB tree temp data
+#view the dataset - must use data() function to bring it into the environment
+pers_n_gb_temp <- pers_b_aspects %>%
+  filter(aspect == "north") %>%
+  filter(tree_name %in% c("gb_w", "gb_s", "gb_e")) %>%
+  drop_na() %>%
+  filter(aspect == "north" & datetime >= "2023-12-07 00:00:00" & datetime <= "2024-01-10 00:00:00")
+
+#glimpse is a different way to view dataset, a bit more clear
+glimpse(pers_n_gb_temp)
+
+#create a new variable to test 
+pers_n_gb_clean<- pers_n_gb_temp %>%
+  filter(aspect == "north")
+
+#visualize the relationship
+pers_n_gb_clean %>%
+  ggplot(aes(x = tree_name, y = temp)) +
+  geom_boxplot()
+
+print(pers_n_gb_clean)
+
+#check p-value and assumptions
+pers_n_gb_clean %>%
+  levene_test(temp ~ tree_name)
+#this gives me a p-value of 0.643, which is not significant, which means there is not a difference in variances noted... 
+```
+
+```{r}
+#create a new variable to test
+pers_n_gb_clean<- pers_n_gb_temp %>%
+  filter(aspect == "north")
+
+#visualize the relationship
+pers_n_gb_clean %>%
+  ggplot(aes(x = tree_name, y = temp)) +
+  geom_boxplot()
+
+print(pers_n_gb_clean)
+
+#check p-value and assumptions
+pers_n_gb_clean %>%
+  levene_test(temp ~ tree_name)
+#this gives me a p-value of 0.643, which is not significant, which means there is not a difference in variances noted... 
+```
+
+```{r}
+#pers_n_db tree temp comparison
+pers_n_db_temp <- pers_b_aspects %>%
+  filter(aspect == "north",tree_name %in% c("db_n", "db_s")) %>%
+  drop_na() %>%
+  filter(aspect == "north" & datetime >= "2023-12-07 00:00:00" & datetime <= "2024-01-10 00:00:00")
+
+glimpse(pers_n_db_temp)
+
+pers_n_db_clean<- pers_n_db_temp
+
+pers_n_db_clean %>%
+  ggplot(aes(x = tree_name, y = temp)) +
+  geom_boxplot()
+
+print(pers_n_db_clean)
+
+#check p-value and assumptions
+pers_n_db_clean %>%
+  levene_test(temp ~ tree_name)
+
+#not a significant p-value, 0.771
+```
+
+```{r}
+#pers_s_gb tree temp data
+pers_s_gb_temp <- pers_b_aspects %>%
+  filter(aspect == "south") %>%
+  filter(tree_name %in% c("gb_w", "gb_s", "gb_e")) %>%
+  drop_na() %>%
+  filter(aspect == "south" & datetime >= "2023-12-07 00:00:00" & datetime <= "2024-01-10 00:00:00")
+
+#glimpse is a different way to view dataset, a bit more clear
+glimpse(pers_s_gb_temp)
+
+#create a new variable to test 
+pers_s_gb_clean<- pers_s_gb_temp
+
+#visualize the relationship
+pers_s_gb_clean %>%
+  ggplot(aes(x = tree_name, y = temp)) +
+  geom_boxplot()
+
+print(pers_s_gb_clean)
+
+#check p-value and assumptions
+pers_s_gb_clean %>%
+  levene_test(temp ~ tree_name)
+#gives a p-value of 0.00937
+```
+
+Since p-value is statistically significant, variances are not equal. So we will transform the variable with a log.
+
+```{r}
+hist(pers_s_gb_clean$temp)
+
+#this part of test did not work...
+pers_s_gb_clean %>%
+  levene_test(log(temp) ~ tree_name)
+```
+
+```{r}
+any_missing <- any(is.na(pers_s_temp_clean))
+
+print(any_missing)
+#returns false
+
+
+my_vector <- unlist(pers_s_temp_clean)
+any_infinite <- any(is.infinite(my_vector))
+any_nan <- any(is.nan(my_vector))
+print(any_infinite)  # Check if there are any infinite values
+print(any_nan)
+```
+
+```{r}
+#performing t-test on non-transformed variable
+
+welch_t_test_result <- pers_s_gb_clean %>%
+  t_test(temp ~ tree_name, var.equal = FALSE)
+
+# Print the result
+print(welch_t_test_result)
+#p-value is significant for all tree comparisons
+```
+
+```{r}
+#pers_s_db tree temp comparison
+pers_s_db_temp <- pers_b_aspects %>%
+  filter(aspect == "south" & tree_name %in% c("db_n", "db_s")) %>%
+  drop_na() %>%
+  filter(aspect == "south" & datetime >= "2023-12-07 00:00:00" & datetime <= "2024-01-10 00:00:00")
+
+glimpse(pers_s_db_temp)
+
+pers_s_db_clean<- pers_s_db_temp
+
+pers_s_db_clean %>%
+  ggplot(aes(x = tree_name, y = temp)) +
+  geom_boxplot()
+
+print(pers_s_db_clean)
+
+#check p-value and assumptions
+pers_s_db_clean %>%
+  levene_test(temp ~ tree_name)
+#p-value is o.0514 - significant enough... 
+```
+
+```{r}
+hist(pers_s_db_clean$temp)
+
+#this part of test did not work...
+pers_s_db_clean %>%
+  levene_test(log(temp) ~ tree_name)
+#did not work... so do welsh test...
+```
+
+```{r}
+#performing t-test on non-transformed variable
+
+welch_t_test_result <- pers_s_db_clean %>%
+  t_test(temp ~ tree_name, var.equal = FALSE)
+
+# Print the result
+print(welch_t_test_result)
+#p-value is not quite significant here... 0.0444
+```
+
+Plotting GB_N vs GB_S
+
+```{r}
+
+#creating a new dataframe with name changes to sensors
+pers_n_gb_new <- pers_n_gb_temp %>%
+  mutate(tree_name = case_when(
+    tree_name == "gb_w" ~ "n_gb_w",
+    tree_name == "gb_s" ~ "n_gb_s",
+    tree_name == "gb_e" ~ "n_gb_e",
+    TRUE ~ tree_name  # Keep the original value if it doesn't match the conditions
+  ))
+
+pers_s_gb_new <- pers_s_gb_temp %>%
+  mutate(tree_name = case_when(
+    tree_name == "gb_w" ~ "s_gb_w",
+    tree_name == "gb_s" ~ "s_gb_s",
+    tree_name == "gb_e" ~ "s_gb_e",
+    TRUE ~ tree_name  # Keep the original value if it doesn't match the conditions
+  ))
+
+#facet wrapped plots by tree
+pers_n_s_gb_plot <- ggplot() +
+  geom_line(data = pers_n_gb_new, aes(x = datetime, y = temp, color = tree_name, linetype = "North"), linetype = "dashed", alpha = 0.5) +
+  geom_line(data = pers_s_gb_new, aes(x = datetime, y = temp, color = tree_name, linetype = "South"), alpha = 0.3) +
+  scale_color_manual(values = c("black", "red", "blue", "black", "red", "blue"), name = NULL) +
+  scale_linetype_manual(values = c("North" = "dashed", "South" = "solid"), name = "Region") +
+  labs(x = "Datetime", y = "Temp (C)", title = "Pers GB North and South Sensors")
+#facet_wrap(~tree_name)
+
+ggplotly(pers_n_s_gb_plot)
+
+```
+
+Plotting DB_N vs DB_S
+
+```{r}
+#creating a new dataframe with name changes to sensors
+pers_n_db_new <- pers_n_db_temp %>%
+  mutate(tree_name = case_when(
+    tree_name == "db_n" ~ "n_db_n",
+    tree_name == "db_s" ~ "n_db_s",
+    TRUE ~ tree_name  # Keep the original value if it doesn't match the conditions
+  ))
+
+pers_s_db_new <- pers_s_db_temp %>%
+  mutate(tree_name = case_when(
+    tree_name == "db_n" ~ "s_db_n",
+    tree_name == "db_s" ~ "s_db_s",
+    TRUE ~ tree_name  # Keep the original value if it doesn't match the conditions
+  ))
+
+#plotting
+pers_n_s_db_plot <- ggplot() +
+  geom_line(data = pers_n_db_new, aes(x = datetime, y = temp, color = tree_name, linetype = "North"), linetype = "dashed", alpha = 0.5) +
+  geom_line(data = pers_s_db_new, aes(x = datetime, y = temp, color = tree_name, linetype = "South"), alpha = 0.3) +
+scale_color_manual(values = c("blue", "red", "blue", "red"), name = NULL) +
+  scale_linetype_manual(values = c("North" = "dashed", "South" = "solid"), name = "Region") +
+  labs(x = "Datetime", y = "Temp (C)", title = "Pers DB North and South Sensors")
+#facet_wrap(~tree_name)
+
+ggplotly(pers_n_s_db_plot)
+```
+
+Plotting Pers_N GB vs DB
+
+```{r}
+pers_n_gb_vs_db_plot <- ggplot() +
+  geom_line(data = pers_n_gb_new, aes(x = datetime, y = temp, color = tree_name, linetype = "North"), linetype = "dashed", alpha = 0.5) +
+  geom_line(data = pers_n_db_new, aes(x = datetime, y = temp, color = tree_name, linetype = "South"), alpha = 0.3) +
+  scale_color_manual(values = c("black", "red", "blue", "black", "red", "blue"), name = NULL) +
+  #scale_linetype_manual(values = c("North" = "dashed", "South" = "solid"), name = "Region") +
+  labs(x = "Datetime", y = "Temp (C)", title = "Pers North GB vs DB")
+
+ggplotly(pers_n_gb_vs_db_plot)
+```
+
+Plotting Pers_S GB vs DB
+
+```{r}
+pers_s_gb_vs_db_plot <- ggplot() +
+  geom_line(data = pers_s_gb_new, aes(x = datetime, y = temp, color = tree_name, linetype = "North"), linetype = "dashed", alpha = 0.5) +
+  geom_line(data = pers_s_db_new, aes(x = datetime, y = temp, color = tree_name, linetype = "South"), alpha = 0.3) +
+  scale_color_manual(values = c("black", "red", "blue", "black", "red", "blue"), name = NULL) +
+  #scale_linetype_manual(values = c("North" = "dashed", "South" = "solid"), name = "Region") +
+  labs(x = "Datetime", y = "Temp (C)", title = "Pers South GB vs DB")
+
+ggplotly(pers_s_gb_vs_db_plot)
+```
+
+Plotting S_GB with SWin/out patterns
+
+```{r}
+
+#install.packages("patchwork")
+library(patchwork)
+
+#combining datasets of pers_s_gb and pers_rad
+pers_s_db_rad_combined <- left_join(pers_s_db_clean, pers_burned_rad, by = "datetime")
+
+#create two seperate plots for temperature and radiation
+pers_s_db_rad1 <- ggplot(data = pers_s_db_rad_combined) +
+  geom_line(aes(x = datetime, y = temp, color = tree_name, linetype = "South"), alpha = 0.5) +
+  scale_color_manual(values = c("blue", "green"), name = NULL) +
+  scale_linetype_manual(values = "solid", name = NULL) +
+  theme(aspect.ratio = 1) +
+  labs(x = "Date", y = "Temperature")
+
+ggplotly(pers_s_db_rad1)
+
+pers_s_db_rad2 <- ggplot(data = pers_s_db_rad_combined) +
+  geom_line(aes(x = datetime, y = SWin_Avg, linetype = "Swin_Avg"), color = "red", alpha = 0.3) +
+  geom_line(aes(x = datetime, y = SWout_Avg, linetype = "SWout_Avg"), color = "black", alpha = 0.3) +
+  scale_linetype_manual(values = c("solid", "solid"), name = NULL) +
+  theme(aspect.ratio = 1) +
+  labs(x = "Datetime", y = "Solar radiation (W/m2)")
+
+ggplotly(pers_s_db_rad2)
+
+#create a combined plot with the two plots above stacked
+pers_s_db_rad_combined_plot <- subplot(pers_s_db_rad2, pers_s_db_rad1, nrows = 2)
+
+ggplotly(pers_s_db_rad_combined_plot)
+```
+
+### 105E Trans Burned Tree Temp Data
+
+```{r}
+#read in temperature data
+trans_b_tree_composite=read_excel("nsf/105E_trans_burned/105E_trans_b_composite.xlsx")
+
+#filter temp data to full data frame
+trans_b_tree_fulldata <- trans_b_tree_composite %>%
+  mutate(datetime = ymd_hms(TIMESTAMP)) %>%
+  select(datetime, everything()) %>%
+  select(-c(TIMESTAMP, Record)) %>%
+  na.omit()
+
+#adding in an aspect column - ** need to edit date on trans_b sensors, seems weird, should be 2023.12.06 around 10 am?
+trans_b_aspects <- trans_b_tree_fulldata %>%
+  pivot_longer(cols = starts_with("Temp"),
+               names_to = "sensor_id",
+               values_to = "temp") %>%
+  #add in aspect column
+  mutate(aspect = ifelse(
+    sensor_id %in% c("Temp_C_Avg(1)", "Temp_C_Avg(5)", "Temp_C_Avg(9)", "Temp_C_Avg(11)"),
+    "north",
+    "other"
+  )) %>%
+mutate(aspect = ifelse(
+    sensor_id %in% c("Temp_C_Avg(2)", "Temp_C_Avg(6)", "Temp_C_Avg(10)", "Temp_C_Avg(12)"),
+    "south",
+    aspect)) %>%
+  mutate(aspect = ifelse(
+    sensor_id %in% c("Temp_C_Avg(3)", "Temp_C_Avg(7)"),
+    "charred",
+    aspect)) %>%
+    mutate(aspect = ifelse(
+    sensor_id %in% c("Temp_C_Avg(4)", "Temp_C_Avg(8)"),
+    "uncharred",
+    aspect)) %>%
+  #adding in sensor name column
+  mutate(tree_name = ifelse(
+    sensor_id %in% c("Temp_C_Avg(1)", "Temp_C_Avg(2)", "Temp_C_Avg(3)", "Temp_C_Avg(4)"),
+    "gb_n",
+    "other"
+  )) %>%
+mutate(tree_name = ifelse(
+    sensor_id %in% c("Temp_C_Avg(5)", "Temp_C_Avg(6)", "Temp_C_Avg(7)", "Temp_C_Avg(8)"),
+    "gb_s",
+    tree_name)) %>%
+  mutate(tree_name = ifelse(
+    sensor_id %in% c("Temp_C_Avg(9)", "Temp_C_Avg(10)"),
+    "db_n",
+    tree_name)) %>%
+    mutate(tree_name = ifelse(
+    sensor_id %in% c("Temp_C_Avg(11)", "Temp_C_Avg(12)"),
+    "db_s",
+    tree_name))
+
+#exporting aspect data as excel
+
+write.xlsx(trans_b_aspects, "nsf/105E_trans_burned/105E_trans_b_aspects.xlsx")
+
+#creating dataframes for individual tree
+trans_gb_n <- trans_b_aspects %>%
+  filter(sensor_id == c("Temp_C_Avg(1)", "Temp_C_Avg(2)", "Temp_C_Avg(3)", "Temp_C_Avg(4)"))
+
+trans_gb_s <- trans_b_aspects %>%
+  filter(sensor_id == c("Temp_C_Avg(5)", "Temp_C_Avg(6)", "Temp_C_Avg(7)", "Temp_C_Avg(8)"))
+
+trans_db_n <- trans_b_aspects %>%
+  filter(sensor_id == c("Temp_C_Avg(9)", "Temp_C_Avg(10)"))
+
+trans_db_s <- trans_b_aspects %>%
+  filter(sensor_id == c("Temp_C_Avg(9)", "Temp_C_Avg(10)"))
+```
+
+### 105E Trans_b Plots
+
+```{r}
+#colors for sensors
+color_data_trans <- data.frame(tree_name = c("gb_n", "gb_s", "db_n", "db_s"), color = c("blue", "orange", "black", "red"))
+
+#individual tree timeseries plots
+trans_north <- trans_b_aspects %>%
+  filter(aspect == "north") %>%
+  ggplot() +
+  geom_line(aes(x = datetime, y = temp, color = tree_name, alpha = 0.5)) +
+  labs(x = "Datetime", y = "Temp (C)", title = "Trans North Sensors") +
+  scale_color_manual(values = setNames(color_data_trans$color, color_data_trans$tree_name))
+
+ggplotly(trans_north)
+
+trans_south <- trans_b_aspects %>%
+  filter(aspect == "south") %>%
+  ggplot() +
+  geom_line(aes(x = datetime, y = temp, color = tree_name, alpha = 0.5)) +
+  labs(x = "Datetime", y = "Temp (C)", title = "Trans South Sensors") +
+  scale_color_manual(values = setNames(color_data_trans$color, color_data_trans$tree_name))
+
+ggplotly(trans_south)
+
+trans_charred <- trans_b_aspects %>%
+  filter(aspect == "charred") %>%
+  ggplot() +
+  geom_line(aes(x = datetime, y = temp, color = tree_name, alpha = 0.5)) +
+  labs(x = "Datetime", y = "Temp (C)", title = "Trans Charred Sensors") +
+  scale_color_manual(values = setNames(color_data_trans$color, color_data_trans$tree_name))
+
+ggplotly(trans_charred)
+
+trans_uncharred <- trans_b_aspects %>%
+  filter(aspect == "uncharred") %>%
+  ggplot() +
+  geom_line(aes(x = datetime, y = temp, color = tree_name, alpha = 0.5)) +
+  labs(x = "Datetime", y = "Temp (C)", title = "Trans Uncharred Sensors") +
+  scale_color_manual(values = setNames(color_data_trans$color, color_data_trans$tree_name))
+
+ggplotly(trans_uncharred)
+
+##trans_gb_n plot
+trans_gb_n_timeseries <- trans_gb_n %>%
+  ggplot() +
+  geom_line(aes(x = datetime, y = temp, color = aspect)) +
+  facet_wrap(~aspect) + 
+  labs(x = "Datetime", y = "Temp (C)", title = "trans_gb_n")
+  #scale_x_datetime(limits = c(as.POSIXct("2041-07-16 23:15:00
+#T"), as.POSIXct("2041-07-17 02:15:00")))
+
+ggplotly(trans_gb_n_timeseries)
+
+##trans_gb_s plot
+trans_gb_s_timeseries <- trans_gb_s %>%
+  ggplot() +
+  geom_line(aes(x = datetime, y = temp, color = aspect)) +
+  facet_wrap(~aspect) + 
+  labs(x = "Datetime", y = "Temp (C)", title = "trans_gb_s")
+  #scale_x_datetime(limits = c(as.POSIXct("2041-07-16 23:15:00
+#T"), as.POSIXct("2041-07-17 02:15:00")))
+ 
+ggplotly(trans_gb_s_timeseries)
+
+##trans_db_n plot
+trans_db_n_timeseries <- trans_db_n %>%
+  ggplot() +
+  geom_line(aes(x = datetime, y = temp, color = aspect)) +
+  facet_wrap(~aspect) + 
+  labs(x = "Datetime", y = "Temp (C)", title = "trans_db_n")
+  #scale_x_datetime(limits = c(as.POSIXct("2041-07-16 23:15:00
+#T"), as.POSIXct("2041-07-17 02:15:00")))
+ 
+ggplotly(trans_db_n_timeseries)
+
+##trans_db_s plot
+trans_db_s_timeseries <- trans_db_s %>%
+  ggplot() +
+  geom_line(aes(x = datetime, y = temp, color = aspect)) +
+  facet_wrap(~aspect) + 
+  labs(x = "Datetime", y = "Temp (C)", title = "trans_db_s")
+  #scale_x_datetime(limits = c(as.POSIXct("2041-07-16 23:15:00
+#T"), as.POSIXct("2041-07-17 02:15:00")))
+ 
+ggplotly(trans_db_s_timeseries)
+
+#FOLLOWING GRAPHS ARE NOT AS HELPFUL
+#graph
+ggplot(trans_b_aspects, aes(x = aspect, fill = aspect)) +
+  geom_bar() +
+  labs(title = "Aspect vs Temperature",
+       x = "Aspect",
+       y = "Count") +
+  theme_minimal() +
+  facet_wrap("sensor_id")
+
+#timeseries plots by tree
+trans_timeseries <- trans_b_aspects %>%
+  ggplot() +
+  geom_line(aes(x = datetime, y = temp, color = aspect)) +
+  facet_wrap(~sensor_name) + 
+  labs(x = "Datetime", y = "Temp (C)")
+
+print(trans_timeseries)
+
+#timeseries plot of just aspect... not as helpful
+trans_b_aspect_timeseries <- trans_b_aspects %>%
+  ggplot() +
+  geom_line(aes(x = datetime, y = temp)) + facet_wrap("aspect")
+
+plot(trans_b_aspect_timeseries)
+
+#histogram
+trans_b_histogram <- trans_b_aspects %>%
+  ggplot(aes(x = temp)) +
+  geom_histogram() + facet_wrap( ~ aspect, scale = "free_x") +
+  labs(title = "Histogram of Temperature Across Sites",
+       x = "Temperature (C)",
+       y = "Frequency") +
+  theme_minimal()
+    # geom_vline(aes(xintercept = mean_temp), price_stats, color = "red", linewidth = 2)
+
+print(trans_b_histogram)
+
+trans_gb_n_timeseries <- trans_gb_n %>%
+  ggplot() +
+  geom_line(aes(x = datetime, y = temp, color = aspect)) +
+  facet_wrap(~sensor_name) + 
+  labs(x = "Datetime", y = "Temp (C)")
+  
+print(trans_gb_n_timeseries)
+```
+
+### 105E Trans_b Data Exploration
+
+```{r}
+#trans_north_GB tree temp data
+#view the dataset - must use data() function to bring it into the environment
+trans_n_gb_temp <- trans_b_aspects %>%
+  filter(aspect == "north") %>%
+  filter(tree_name %in% c("gb_n", "gb_s")) %>%
+  drop_na()
+  #filter(aspect == "north" & datetime >= "2023-12-07 00:00:00" & datetime <= "2024-01-10 00:00:00")
+
+#glimpse is a different way to view dataset, a bit more clear
+glimpse(trans_n_gb_temp)
+
+#create a new variable to test 
+trans_n_gb_clean<- trans_n_gb_temp %>%
+  filter(aspect == "north")
+
+#visualize the relationship
+trans_n_gb_clean %>%
+  ggplot(aes(x = tree_name, y = temp)) +
+  geom_boxplot()
+
+#check p-value and assumptions
+trans_n_gb_clean %>%
+  levene_test(temp ~ tree_name)
+#this gives me a p-value of 0.102, which is not significant, which means there is not a difference in variances noted... 
+```
+
+```{r}
+#pers_n_db tree temp comparison
+trans_n_db_temp <- trans_b_aspects %>%
+  filter(aspect == "north",tree_name %in% c("db_n", "db_s")) %>%
+  drop_na()
+  #filter(aspect == "north" & datetime >= "2023-12-07 00:00:00" & datetime <= "2024-01-10 00:00:00")
+
+glimpse(trans_n_db_temp)
+
+trans_n_db_clean<- trans_n_db_temp
+
+trans_n_db_clean %>%
+  ggplot(aes(x = tree_name, y = temp)) +
+  geom_boxplot()
+
+#check p-value and assumptions
+trans_n_db_clean %>%
+  levene_test(temp ~ tree_name)
+
+#not a significant p-value, 0.800
+```
+
+```{r}
+#trans_s_gb tree temp data
+trans_s_gb_temp <- trans_b_aspects %>%
+  filter(aspect == "south") %>%
+  filter(tree_name %in% c("gb_n", "gb_s")) %>%
+  drop_na()
+  #filter(aspect == "south" & datetime >= "2023-12-07 00:00:00" & datetime <= "2024-01-10 00:00:00")
+
+#glimpse is a different way to view dataset, a bit more clear
+glimpse(trans_s_gb_temp)
+
+#create a new variable to test 
+trans_s_gb_clean<- trans_s_gb_temp
+
+#visualize the relationship
+trans_s_gb_clean %>%
+  ggplot(aes(x = tree_name, y = temp)) +
+  geom_boxplot()
+
+#check p-value and assumptions
+trans_s_gb_clean %>%
+  levene_test(temp ~ tree_name)
+#gives a p-value of 0.601
+
+hist(trans_s_gb_clean$temp)
+
+#this part of test did not work...
+trans_s_gb_clean %>%
+  levene_test(log(temp) ~ tree_name)
+
+#performing t-test on non-transformed variable
+welch_t_test_result <- trans_s_gb_clean %>%
+  t_test(temp ~ tree_name, var.equal = FALSE)
+
+# Print the result
+print(welch_t_test_result)
+#p-value is not significant - 0.758 value
+```
+
+```{r}
+#trans_s_db tree temp comparison
+trans_s_db_temp <- trans_b_aspects %>%
+  filter(aspect == "south" & tree_name %in% c("db_n", "db_s")) %>%
+  drop_na()
+  #filter(aspect == "south" & datetime >= "2023-12-07 00:00:00" & datetime <= "2024-01-10 00:00:00")
+
+glimpse(trans_s_db_temp)
+
+trans_s_db_clean<- trans_s_db_temp
+
+trans_s_db_clean %>%
+  ggplot(aes(x = tree_name, y = temp)) +
+  geom_boxplot()
+
+print(trans_s_db_clean)
+
+#check p-value and assumptions
+trans_s_db_clean %>%
+  levene_test(temp ~ tree_name)
+#p-value is not significant - 0.273
+
+trans_s_db_clean %>%
+  levene_test(log(temp) ~ tree_name)
+#p-value is not significant, 0.642
+```
+
+Plotting GB_N vs GB_S for transitional data
+
+```{r}
+#creating a new dataframe with name changes to sensors
+trans_n_gb_new <- trans_n_gb_temp %>%
+  mutate(tree_name = case_when(
+    tree_name == "gb_n" ~ "n_gb_n",
+    tree_name == "gb_s" ~ "n_gb_s",
+    TRUE ~ tree_name  # Keep the original value if it doesn't match the conditions
+  ))
+
+trans_s_gb_new <- trans_s_gb_temp %>%
+  mutate(tree_name = case_when(
+    tree_name == "gb_n" ~ "s_gb_n",
+    tree_name == "gb_s" ~ "s_gb_s",
+    TRUE ~ tree_name  # Keep the original value if it doesn't match the conditions
+  ))
+
+#facet wrapped plots by tree
+trans_n_s_gb_plot <- ggplot() +
+  geom_line(data = trans_n_gb_new, aes(x = datetime, y = temp, color = tree_name, linetype = "North"), linetype = "dashed", alpha = 0.5) +
+  geom_line(data = trans_s_gb_new, aes(x = datetime, y = temp, color = tree_name, linetype = "South"), alpha = 0.3) +
+  scale_color_manual(values = c("blue", "red", "blue", "red"), name = NULL) +
+  scale_linetype_manual(values = c("North" = "dashed", "South" = "solid"), name = "Region") +
+  labs(x = "Datetime", y = "Temp (C)", title = "Trans GB North and South Sensors")
+#facet_wrap(~tree_name)
+
+ggplotly(trans_n_s_gb_plot)
+```
+
+Plotting DB_N vs DB_S for transitional sites
+
+```{r}
+#creating a new dataframe with name changes to sensors
+trans_n_db_new <- trans_n_db_temp %>%
+  mutate(tree_name = case_when(
+    tree_name == "db_n" ~ "n_db_n",
+    tree_name == "db_s" ~ "n_db_s",
+    TRUE ~ tree_name  # Keep the original value if it doesn't match the conditions
+  ))
+
+trans_s_db_new <- trans_s_db_temp %>%
+  mutate(tree_name = case_when(
+    tree_name == "db_n" ~ "s_db_n",
+    tree_name == "db_s" ~ "s_db_s",
+    TRUE ~ tree_name  # Keep the original value if it doesn't match the conditions
+  ))
+
+#plotting
+trans_n_s_db_plot <- ggplot() +
+  geom_line(data = trans_n_db_new, aes(x = datetime, y = temp, color = tree_name, linetype = "North"), linetype = "dashed", alpha = 0.5) +
+  geom_line(data = trans_s_db_new, aes(x = datetime, y = temp, color = tree_name, linetype = "South"), alpha = 0.3) +
+scale_color_manual(values = c("blue", "red", "blue", "red"), name = NULL) +
+  scale_linetype_manual(values = c("North" = "dashed", "South" = "solid"), name = "Region") +
+  labs(x = "Datetime", y = "Temp (C)", title = "Trans DB North and South Sensors")
+#facet_wrap(~tree_name)
+
+ggplotly(trans_n_s_db_plot)
+```
+
+Plotting Trans N GB vs DB
+
+```{r}
+trans_n_gb_vs_db_plot <- ggplot() +
+  geom_line(data = trans_n_gb_new, aes(x = datetime, y = temp, color = tree_name, linetype = "North"), linetype = "dashed", alpha = 0.5) +
+  geom_line(data = trans_n_db_new, aes(x = datetime, y = temp, color = tree_name, linetype = "South"), alpha = 0.3) +
+  scale_color_manual(values = c("blue", "red", "blue", "red"), name = NULL) +
+  #scale_linetype_manual(values = c("North" = "dashed", "South" = "solid"), name = "Region") +
+  labs(x = "Datetime", y = "Temp (C)", title = "Trans North GB vs DB")
+
+ggplotly(trans_n_gb_vs_db_plot)
+```
+
+Plotting Trans S GB vs DB
+
+```{r}
+trans_s_gb_vs_db_plot <- ggplot() +
+  geom_line(data = trans_s_gb_new, aes(x = datetime, y = temp, color = tree_name, linetype = "North"), linetype = "dashed", alpha = 0.5) +
+  geom_line(data = trans_s_db_new, aes(x = datetime, y = temp, color = tree_name, linetype = "South"), alpha = 0.3) +
+  scale_color_manual(values = c("blue", "red", "blue", "red"), name = NULL) +
+  #scale_linetype_manual(values = c("North" = "dashed", "South" = "solid"), name = "Region") +
+  labs(x = "Datetime", y = "Temp (C)", title = "Trans South GB vs DB")
+
+ggplotly(trans_s_gb_vs_db_plot)
+```
+
+### Comparing Trans vs Pers Sensors
+
+```{r}
+#do stacked plots like I did for radiation in pers_burned area
+```
+
+```{r}
+#** NEED TO HAVE DATA WITH SAME TIME RANGE BEFORE I CAN DO THIS COMPARISON
+
+#plotting
+trans_vs_pers_n_db <- ggplot() +
+  geom_line(data = trans_n_db_new, aes(x = datetime, y = temp, color = tree_name, linetype = "North"), linetype = "dashed", alpha = 0.5) +
+  geom_line(data = pers_n_db_new, aes(x = datetime, y = temp, color = tree_name, linetype = "Persistent"), alpha = 0.3) +
+scale_color_manual(values = c("blue", "red", "blue", "red"), name = NULL) +
+  scale_linetype_manual(values = c("North" = "dashed", "South" = "solid"), name = "Region") +
+  labs(x = "Datetime", y = "Temp (C)", title = "Trans vs Pers DB North Sensors")
+#facet_wrap(~tree_name)
+
+ggplotly(trans_vs_pers_n_db)
+```
