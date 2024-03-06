@@ -11,7 +11,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```{r}
 packages <- c('tidyverse',
-              'lterdatasampler', 'dplyr', 'ggplot2', 'readr', 'readxl', 'lubridate', 'plotly', 'openxlsx', 'plotly', 'rstatix')
+              'lterdatasampler', 'dplyr', 'ggplot2', 'readr', 'readxl', 'lubridate', 'plotly', 'openxlsx', 'plotly', 'rstatix', 'htmlwidgets')
 
 install.packages(packages)
 
@@ -26,6 +26,7 @@ library(plotly)
 library(openxlsx)
 library(plotly)
 library(rstatix)
+library(htmlwidgets)
 
 setwd("/Volumes/wcnr-network/Research/Kampf/Private/field_data")
 ```
@@ -184,12 +185,58 @@ pers_s_ub_new <- pers_s_ub_temp %>%
 
 #facet wrapped plots by tree
 pers_ub_n_s_gb_plot <- ggplot() +
-  geom_line(data = pers_n_ub_new, aes(x = datetime, y = temp, color = tree_name, linetype = "North"), linetype = "dashed", alpha = 0.5) +
+  geom_line(data = pers_n_ub_new, aes(x = datetime, y = temp, color = tree_name, linetype = "North"), alpha = 0.5) +
   geom_line(data = pers_s_ub_new, aes(x = datetime, y = temp, color = tree_name, linetype = "South"), alpha = 0.3) +
-  scale_color_manual(values = c("red", "blue", "red", "blue"), name = NULL) +
-  scale_linetype_manual(values = c("North" = "dashed", "South" = "solid"), name = "Region") +
+  scale_color_manual(values = c("blue", "red", "blue", "red"), name = NULL) +
+scale_linetype_manual(values = c("solid", "dashed"), name = "Zone") +
   labs(x = "Datetime", y = "Temp (C)", title = "Pers UB North and South Sensors")
 #facet_wrap(~tree_name)
 
 ggplotly(pers_ub_n_s_gb_plot)
+```
+
+```{r}
+#creating north vs south sensor dataframes
+
+##north dataframe
+all_pers_ub_n_sensors <- pers_n_ub_temp %>%
+  filter(tree_name %in% c("ub_n", "ub_s")) %>%
+  mutate(zone = "persistent") %>%
+  select(-sensor_id) %>%
+  mutate(burn_status = case_when(
+    tree_name == "ub_n" ~ "n_ub_n_tree",
+    tree_name == "ub_s" ~ "n_ub_s_tree",
+    TRUE ~ tree_name  # Keep the original value if it doesn't match the conditions
+  ))
+
+##south dataframe
+all_pers_ub_s_sensors <- pers_s_ub_temp %>%
+  filter(tree_name %in% c("ub_n", "ub_s")) %>%
+  mutate(zone = "persistent") %>%
+  select(-sensor_id) %>%
+  mutate(burn_status = case_when(
+    tree_name == "ub_n" ~ "s_ub_n_tree",
+    tree_name == "ub_s" ~ "s_ub_s_tree",
+    TRUE ~ tree_name  # Keep the original value if it doesn't match the conditions
+  ))
+```
+
+```{r}
+#creating UB combined N vs S sensor plot
+
+all_pers_ub_sensors_plot <-  ggplot() +
+  geom_line(data = all_pers_ub_n_sensors, aes(x = datetime, y = temp, color = burn_status), linetype = "dashed", alpha = 0.8) +
+  geom_line(data = all_pers_ub_s_sensors, aes(x = datetime, y = temp, color = burn_status), linetype = "solid", alpha = 0.5) +
+scale_color_manual(values = c("green", "blue", "orange", "red"), name = "aspect_burnstatus_treename,") +
+  scale_linetype_manual(values = c("solid", "dashed"), name = "Aspect") +
+  labs(x = "Datetime", y = "Temp (C)", title = "Persistent North and South UB Sensors")
+
+ggplotly(all_pers_ub_sensors_plot)
+
+#making into a plotly instead of a ggplot
+plotly_all_pers_ub_sensors_plot <- ggplotly(all_pers_ub_sensors_plot)
+```
+
+```{r}
+htmlwidgets::saveWidget(plotly_all_pers_ub_sensors_plot, "all_pers_ub_sensors.html")
 ```
