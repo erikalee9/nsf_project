@@ -1,0 +1,195 @@
+---
+title: "tree_temp_data_unburned_processing_code"
+author: "Erika Lee"
+date: "2024-03-01"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+packages <- c('tidyverse',
+              'lterdatasampler', 'dplyr', 'ggplot2', 'readr', 'readxl', 'lubridate', 'plotly', 'openxlsx', 'plotly', 'rstatix')
+
+install.packages(packages)
+
+library(tidyverse)
+library(lterdatasampler)
+library(dplyr)
+library(ggplot2)
+library(readr)
+library(readxl)
+library(lubridate)
+library(plotly)
+library(openxlsx)
+library(plotly)
+library(rstatix)
+
+setwd("/Volumes/wcnr-network/Research/Kampf/Private/field_data")
+```
+
+## Tree Temp Data
+
+### 105E Pers_ub Tree Temp Data
+
+```{r}
+#read in temperature data
+pers_ub_tree_composite=read_excel("nsf/105E_pers_unburned/105E_pers_ub_composite.xlsx")
+
+#filter temp data to full data frame
+pers_ub_tree_fulldata <- pers_ub_tree_composite %>%
+  mutate(datetime = ymd_hms(TIMESTAMP)) %>%
+  select(datetime, everything()) %>%
+  select(-c(TIMESTAMP, RECORD))
+
+#adding in an aspect column - WITH ONLY 14 SENSORS!
+pers_ub_aspects <- pers_ub_tree_fulldata %>%
+  pivot_longer(cols = starts_with("Temp"),
+               names_to = "sensor_id",
+               values_to = "temp") %>%
+  #add in aspect column
+  mutate(aspect = ifelse(
+    sensor_id %in% c(
+      "Temp_C_Avg(1)",
+      "Temp_C_Avg(3)"),
+    "north",
+    "other"
+  )) %>%
+  mutate(aspect = ifelse(
+    sensor_id %in% c(
+      "Temp_C_Avg(2)",
+      "Temp_C_Avg(4)"),
+    "south",
+    aspect
+  )) %>%
+  #adding in sensor name column
+  mutate(tree_name = ifelse(
+    sensor_id %in% c(
+      "Temp_C_Avg(1)",
+      "Temp_C_Avg(2)"
+    ),
+    "ub_n",
+    "other"
+  )) %>%
+  mutate(tree_name = ifelse(
+    sensor_id %in% c(
+      "Temp_C_Avg(3)", 
+      "Temp_C_Avg(4)"
+    ),
+    "ub_s",
+    tree_name
+  )) 
+
+#creating dataframes for individual tree
+pers_ub_n <- pers_ub_aspects %>%
+  filter(sensor_id == c("Temp_C_Avg(1)", "Temp_C_Avg(2)"))
+
+pers_ub_s <- pers_ub_aspects %>%
+  filter(sensor_id == c("Temp_C_Avg(3)", "Temp_C_Avg(4)"))
+
+#exporting aspect data as excel
+
+write.xlsx(pers_b_aspects, "nsf/105E_pers_burned/105E_pers_b_aspects.xlsx")
+```
+
+### 105E Pers_ub Plots
+
+```{r}
+#colors for sensors
+color_data_pers <- data.frame(tree_name = c("gb_e", "gb_w", "gb_s", "db_n", "db_s"), color = c("blue", "orange", "red", "black", "purple"))
+
+#individual tree timeseries plots
+pers_ub_north <- pers_ub_aspects %>%
+  filter(aspect == "north") %>%
+  ggplot() +
+  geom_line(aes(x = datetime, y = temp, color = tree_name, alpha = 0.5)) +
+  labs(x = "Datetime", y = "Temp (C)", title = "Pers North Sensors") +
+  scale_color_manual(values = setNames(color_data_pers$color, color_data_pers$tree_name))
+
+ggplotly(pers_ub_north)
+
+pers_south <- pers_b_aspects %>%
+  filter(aspect == "south") %>%
+  ggplot() +
+  geom_line(aes(x = datetime, y = temp, color = tree_name, alpha = 0.5)) +
+  labs(x = "Datetime", y = "Temp (C)", title = "Pers South Sensors") +
+  scale_color_manual(values = setNames(color_data_pers$color, color_data_pers$tree_name))
+
+ggplotly(pers_south)
+```
+
+105E Pers_ub Data Exploraton
+
+```{r}
+#pers_n_ub tree temp data
+#view the dataset - must use data() function to bring it into the environment
+pers_n_ub_temp <- pers_ub_aspects %>%
+  filter(aspect == "north") %>%
+  filter(tree_name %in% c("ub_n", "ub_s")) %>%
+  drop_na()
+  #filter(aspect == "north" & datetime >= "2023-12-07 00:00:00" & datetime <= "2024-01-10 00:00:00")
+
+#visualize the relationship
+pers_n_ub_temp %>%
+  ggplot(aes(x = tree_name, y = temp)) +
+  geom_boxplot()
+
+print(pers_n_gb_clean)
+
+#check p-value and assumptions
+pers_n_ub_temp %>%
+  levene_test(temp ~ tree_name)
+
+#gives signidicant p-value of 0.0075
+```
+
+```{r}
+#pers_s_ub tree temp data
+pers_s_ub_temp <- pers_ub_aspects %>%
+  filter(aspect == "south") %>%
+  filter(tree_name %in% c("ub_n", "ub_s")) %>%
+  drop_na()
+  #filter(aspect == "south" & datetime >= "2023-12-07 00:00:00" & datetime <= "2024-01-10 00:00:00")
+
+#visualize the relationship
+pers_s_ub_temp %>%
+  ggplot(aes(x = tree_name, y = temp)) +
+  geom_boxplot()
+
+#check p-value and assumptions
+pers_s_ub_temp %>%
+  levene_test(temp ~ tree_name)
+#gives a significant p-value of 0.0182
+```
+
+Plotting ub_n vs ub_s
+
+```{r}
+#creating a new dataframe with name changes to sensors
+pers_n_ub_new <- pers_n_ub_temp %>%
+  mutate(tree_name = case_when(
+    tree_name == "ub_n" ~ "n_ub_n",
+    tree_name == "ub_s" ~ "n_ub_s",
+    TRUE ~ tree_name  # Keep the original value if it doesn't match the conditions
+  ))
+
+pers_s_ub_new <- pers_s_ub_temp %>%
+  mutate(tree_name = case_when(
+    tree_name == "ub_n" ~ "s_ub_n",
+    tree_name == "ub_s" ~ "s_ub_s",
+    TRUE ~ tree_name  # Keep the original value if it doesn't match the conditions
+  ))
+
+#facet wrapped plots by tree
+pers_ub_n_s_gb_plot <- ggplot() +
+  geom_line(data = pers_n_ub_new, aes(x = datetime, y = temp, color = tree_name, linetype = "North"), linetype = "dashed", alpha = 0.5) +
+  geom_line(data = pers_s_ub_new, aes(x = datetime, y = temp, color = tree_name, linetype = "South"), alpha = 0.3) +
+  scale_color_manual(values = c("red", "blue", "red", "blue"), name = NULL) +
+  scale_linetype_manual(values = c("North" = "dashed", "South" = "solid"), name = "Region") +
+  labs(x = "Datetime", y = "Temp (C)", title = "Pers UB North and South Sensors")
+#facet_wrap(~tree_name)
+
+ggplotly(pers_ub_n_s_gb_plot)
+```
