@@ -1,0 +1,126 @@
+---
+title: "tree_temp_wx_combined_plots"
+author: "Erika Lee"
+date: "2024-03-06"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+#set up
+library(tidyverse)
+library(lterdatasampler)
+library(dplyr)
+library(ggplot2)
+library(readr)
+library(readxl)
+library(lubridate)
+library(plotly)
+library(openxlsx)
+library(plotly)
+library(rstatix)
+library(htmlwidgets)
+library(patchwork)
+library(here)
+
+setwd("/Volumes/wcnr-network/Research/Kampf/Private/field_data")
+```
+
+```{r}
+#creating a combined N/S sensors dataframe for persistent trees
+
+pers_b_ns_sensors <- pers_b_aspects %>%
+  filter(datetime >= "2023-12-19 00:00:00" & datetime <= "2024-01-10 00:00:00") %>%
+  filter(aspect %in% c("north", "south")) %>%
+  select(-sensor_id) %>%
+  mutate(burn_status = case_when(
+    tree_name == "gb_w" ~ "GB",
+    tree_name == "gb_s" ~ "GB",
+    tree_name == "gb_e" ~ "GB",
+    tree_name == "db_n" ~ "DB",
+    tree_name == "db_s" ~ "DB",
+    TRUE ~ tree_name  # Keep the original value if it doesn't match the conditions
+  )) %>%
+  #creating a new column with aspect_burnstatus_treename
+  mutate(full_name = case_when(
+    tree_name == "gb_w" & aspect == "north" ~ "n_gb_w_tree",
+    tree_name == "gb_s" & aspect == "north" ~ "n_gb_s_tree",
+    tree_name == "gb_e" & aspect == "north" ~ "n_gb_e_tree",
+    tree_name == "gb_w" & aspect == "south" ~ "s_gb_w_tree",
+    tree_name == "gb_s" & aspect == "south" ~ "s_gb_s_tree",
+    tree_name == "gb_e" & aspect == "south" ~ "s_gb_e_tree",
+    tree_name == "db_n" & aspect == "north" ~ "n_db_n_tree",
+    tree_name == "db_s" & aspect == "north" ~ "n_db_s_tree",
+    tree_name == "db_n" & aspect == "south" ~ "s_db_n_tree",
+    tree_name == "db_s" & aspect == "south" ~ "s_db_s_tree",
+    TRUE ~ tree_name  # Keep the original value if it doesn't match the conditions
+  ))
+```
+
+```{r}
+#creating one dataframe with tree temp, radiation and air temp for one tree
+
+selected_pers_b_tree_rad_airT <- pers_b_aspects %>%
+  filter(datetime >= "2023-12-19 00:00:00" & datetime <= "2024-01-10 00:00:00") %>%
+  filter(aspect == "south" & tree_name %in% c("gb_e", "db_s")) %>%
+  mutate(full_name = case_when(
+    tree_name == "gb_e" & aspect == "south" ~ "s_gb_e_tree",
+    tree_name == "db_s" & aspect == "south" ~ "s_db_s_tree",
+    TRUE ~ tree_name  # Keep the original value if it doesn't match the conditions
+  )) %>%
+  select(-sensor_id) %>% 
+  full_join(pers_burned_rad_air, by = "datetime") %>%
+  drop_na()
+```
+
+```{r}
+#plotting tree temp and air temp together
+combined_pers_b_treeairT_plot <- ggplot(data = selected_pers_b_tree_rad_airT) +
+  geom_line(aes(x = datetime, y = temp, linetype = "s_gb_e_tree", color = "s_gb_e_tree"), linetype = "solid", alpha = 0.5) + 
+  geom_line(aes(x = datetime, y = temp, linetype = "s_db_s_tree", color = "s_db_s_tree"), linetype = "dashed", alpha = 0.5) +
+  geom_line(aes(x = datetime, y = AirTC_Avg, color = "AirT (C)"), linetype = "solid", alpha = 0.5) +
+  labs(x = "Datetime", y = "Temp (C)", title = "Persistent South Aspect Sensors Tree Temps and Weather") +
+  theme_minimal() +
+ scale_color_manual(values = c("s_gb_e_tree" = "red", "s_db_s_tree" = "blue", "AirT (C)" = "green")) +
+  guides(linetype = guide_legend(title = "Line Type"), color = guide_legend(title = "Color"))
+
+combined_pers_b_treeairT_plot
+```
+
+```{r}
+#creating seperate radiation plot
+radiation_plot <- ggplot() +
+  geom_line(data = selected_pers_b_tree_rad_airT, aes(x = datetime, y = SWin_Avg, color = "SWin_Avg")) +
+  labs(x = "Datetime", y = "SWin (w/m2)", title = "Incoming SW Radiation") +
+  scale_color_manual(values = c("SWin_Avg" = "orange")) +
+  guides(linetype = guide_legend(title = "Line Type"), color = guide_legend(title = "Color"))
+
+ggplotly(radiation_plot)
+```
+
+```{r}
+## creating a combined plot of both plots on one page!
+# Convert ggplot objects to plotly objects
+plotly_pers_b_treeairT <- ggplotly(combined_pers_b_treeairT_plot)
+plotly_pers_b_rad <- ggplotly(radiation_plot)
+
+# Combine the two plots vertically
+combined_plot <- subplot(plotly_pers_b_treeairT, plotly_pers_b_rad, nrows = 2, shareX = TRUE)
+
+# Set layout for the combined plot
+combined_plot <- layout(combined_plot, title = "Persistent South Aspect Sensors Tree Temps, Air Temp and Incoming SW radiation",
+                        xaxis = list(title = "Datetime"),
+                        yaxis = list(title = "Temp (C)"), 
+                        yaxis2 = list(title = "SWin (W/m2)"))
+
+# Display the combined plot
+combined_plot
+```
+
+```{r}
+#exporting as a html page
+htmlwidgets::saveWidget(combined_plot, "combined_pers_b_south_senors_weather_data.html")
+```
