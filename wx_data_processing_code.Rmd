@@ -123,12 +123,12 @@ pers_unburned <- pers_unburned_fulldata %>%
   select(-c(TIMESTAMP, RECORD))
 ```
 
-### Pers Burned Solar Radiation Data
+### Pers Burned Rad/Air T dataframe
 
 ```{r}
-#creating new dataframe for specific dates, to compare to 105E South sensors
-pers_burned_rad <- pers_burned_wx_15min %>%
+#creating new dataframe for specific dates, radiation and air temp
+pers_burned_rad_air<- pers_burned_wx_15min %>%
     drop_na() %>%
   filter(datetime >= "2023-12-07 00:00:00" & datetime <= "2024-01-10 00:00:00") %>%
-  select("TIMESTAMP", "SWin_Avg", "SWout_Avg")
+  select("datetime", "SWin_Avg", "SWout_Avg", "AirTC_Avg")
 ```
