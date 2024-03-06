@@ -113,13 +113,20 @@ trans_n_db_sensors <- trans_n_db_temp %>%
 #plotting all_n_db_sensors_plot 
 
 all_n_db_sensors_plot <-  ggplot() +
-  geom_line(data = trans_n_db_sensors, aes(x = datetime, y = temp, color = burn_status, linetype = "Transitional"), linetype = "dashed", alpha = 0.5) +
-  geom_line(data = pers_n_db_sensors, aes(x = datetime, y = temp, color = burn_status, linetype = "Persistent"), linetype = "solid", alpha = 0.3) +
-scale_color_manual(values = c("blue", "green", "red", "purple"), name = "Burn Status") +
-  scale_linetype_manual(values = c("Transitional" = "dashed", "Persistent" = "solid"), name = "Region") +  # Corrected legend title
+  geom_line(data = trans_n_db_sensors, aes(x = datetime, y = temp, color = burn_status, linetype = "Transitional"), alpha = 0.5) +
+  geom_line(data = pers_n_db_sensors, aes(x = datetime, y = temp, color = burn_status, linetype = "Persistent"), alpha = 0.3) +
+scale_color_manual(values = c("blue", "red", "blue", "red"), name = "zone_burnstatus_treename") +
+  scale_linetype_manual(values = c("solid", "dashed"), name = "Region") +
   labs(x = "Datetime", y = "Temp (C)", title = "Transitional and Persistent DB North Sensors")
 
 ggplotly(all_n_db_sensors_plot)
+
+plotly_all_n_db_sensors_plot <- ggplotly(all_n_db_sensors_plot)
+```
+
+```{r}
+#exporting to hmtl
+htmlwidgets::saveWidget(plotly_all_n_db_sensors_plot, "all_n_db_sensors_plot.html")
 ```
 
 ```{r}
@@ -162,17 +169,27 @@ trans_s_db_sensors <- trans_s_db_temp %>%
 #plotting all_s_db_sensors_plot 
 
 all_s_db_sensors_plot <- ggplot() +
-  geom_line(data = trans_s_db_sensors, aes(x = datetime, y = temp, color = burn_status, linetype = "Transitional"), linetype = "dashed", alpha = 0.5) +
-  geom_line(data = pers_s_db_sensors, aes(x = datetime, y = temp, color = burn_status, linetype = "Persistent"), linetype = "solid", alpha = 0.3) +
-  scale_color_manual(values = c("blue", "green", "red", "purple"), name = "Burn Status") +  # Corrected legend title
-  scale_linetype_manual(values = c("Transitional" = "dashed", "Persistent" = "solid"), name = "Region") +  # Corrected legend title
+  geom_line(data = trans_s_db_sensors, aes(x = datetime, y = temp, color = burn_status, linetype = "Transitional"), alpha = 0.5) +
+  geom_line(data = pers_s_db_sensors, aes(x = datetime, y = temp, color = burn_status, linetype = "Persistent"), alpha = 0.3) +
+  scale_color_manual(values = c("blue", "green", "red", "purple"), name = "zone_burnstatus_treename") + 
+scale_linetype_manual(values = c("solid", "dashed"), name = "Region") +
   labs(x = "Datetime", y = "Temp (C)", title = "Transitional and Persistent Dead Burn Tree South Sensors")
 
 ggplotly(all_s_db_sensors_plot)
+
+#converting plot to plotly inorder to export as a widget
+plotly_all_s_db_sensors_plot <- ggplotly(all_s_db_sensors_plot)
 ```
 
 ```{r}
-#exporting to powerpoint
+#exporting to html
+library(htmlwidgets)
+
+htmlwidgets::saveWidget(plotly_all_s_db_sensors_plot, "all_s_db_sensors_plot.html")
+```
+
+```{r}
+#exporting to powerpoint - Decided not to use!
 all_s_db_sensors_plot_dml <- rvg::dml(ggobj = all_s_db_sensors_plot)
 
 #initializing powerpoint slide
@@ -186,7 +203,7 @@ officer::read_pptx() %>%
 ```
 
 ```{r}
-#combinging DB plots into one image and then save it in plots window!
+#combinging DB plots into one image and then save it in plots window! - decided not to use!
 library(ggplot2)
 library(cowplot)
 
@@ -217,6 +234,7 @@ trans_n_gb_sensors <- trans_n_gb_temp %>%
     tree_name == "gb_n" ~ "trans_gb_n_tree",
     TRUE ~ tree_name  # Keep the original value if it doesn't match the conditions
   ))
+
 ```
 
 ```{r}
@@ -248,50 +266,58 @@ trans_s_gb_sensors <- trans_s_gb_temp %>%
 #plotting all_s_gb_sensors_plot 
 
 all_s_gb_sensors_plot <- ggplot() +
-  geom_line(data = trans_s_gb_sensors, aes(x = datetime, y = temp, color = burn_status, linetype = "Transitional"), linetype = "dashed", alpha = 0.5) +
-  geom_line(data = pers_s_gb_sensors, aes(x = datetime, y = temp, color = burn_status, linetype = "Persistent"), linetype = "solid", alpha = 0.3) +
-  scale_color_manual(values = c("blue", "green", "red", "purple"), name = "Burn Status") +  # Corrected legend title
-  scale_linetype_manual(values = c("Transitional" = "dashed", "Persistent" = "solid"), name = "Region") +  # Corrected legend title
+  geom_line(data = trans_s_gb_sensors, aes(x = datetime, y = temp, color = burn_status, linetype = "Transitional"), alpha = 0.5) +
+  geom_line(data = pers_s_gb_sensors, aes(x = datetime, y = temp, color = burn_status, linetype = "Persistent"), alpha = 0.3) +
+  scale_color_manual(values = c("blue", "red", "blue", "red"), name = "zone_burnstatus_treename") +  
+  scale_linetype_manual(values = c("solid", "dashed"), name = "Region") +  
   labs(x = "Datetime", y = "Temp (C)", title = "Transitional and Persistent Green Burn Tree South Sensors")
 
 ggplotly(all_s_gb_sensors_plot)
+
+plotly_all_s_gb_sensors_plot <- ggplotly(all_s_gb_sensors_plot)
 ```
 
 ```{r}
-library(htmlwidgets)
-
-file_path <- "/Users/erikalee/Documents/CSU_Classes/R_work/nsf_project_code/nsf_project/graphics"
-
-htmlwidgets::saveWidget(all_s_gb_sensors_plot, file_path)
+#exporting to html
+htmlwidgets::saveWidget(plotly_all_s_gb_sensors_plot, "all_s_gb_sensors_plot.html")
 ```
 
 ```{r}
-all_n_gb_sensors_plot <-  ggplot() +
-  geom_line(data = trans_n_gb_sensors, aes(x = datetime, y = temp, color = burn_status), linetype = "dashed", alpha = 0.5) +
-  geom_line(data = pers_n_gb_sensors, aes(x = datetime, y = temp, color = burn_status), linetype = "solid", alpha = 0.3) +
-scale_color_manual(values = c("blue", "green", "red", "purple"), name = "Burn Status") +
-  scale_linetype_manual(values = c("Transitional" = "dashed", "Persistent" = "solid"), name = "Region") +
+all_n_gb_sensors_plot <- ggplot() +
+  geom_line(data = trans_n_gb_sensors, aes(x = datetime, y = temp, color = burn_status, linetype = "Transitional"), alpha = 0.5) +
+  geom_line(data = pers_n_gb_sensors, aes(x = datetime, y = temp, color = burn_status, linetype = "Persistent"), alpha = 0.3) +
+  scale_color_manual(values = c("blue", "red", "blue", "red"), name = "zone_burnstatus_treename") +
+  scale_linetype_manual(values = c("solid", "dashed"), name = "Region") +
   labs(x = "Datetime", y = "Temp (C)", title = "Transitional and Persistent North Aspect Green Burn Tree Sensors")
 
 ggplotly(all_n_gb_sensors_plot)
+
+plotly_all_n_gb_sensors_plot <- ggplotly(all_n_gb_sensors_plot)
 ```
 
 ```{r}
-#exporting as widget
-
-
-#explorting to powerpoint slides
-all_s_gb_sensors_plot_dml <- rvg::dml(ggobj = all_s_gb_sensors_plot)
+plotly_all_s_gb_sensors_plot <- ggplotly(all_n_gb_sensors_plot)
 ```
 
 ```{r}
-#combinging GB plots into one image and then save it in plots window!
-library(ggplot2)
-library(cowplot)
-
-combined_gb_plots <- plot_grid(all_n_gb_sensors_plot, all_s_gb_sensors_plot, nrow = 2) 
-
-print(combined_gb_plots)
+#exporting to html
+htmlwidgets::saveWidget(plotly_all_n_gb_sensors_plot, "all_n_gb_sensors_plot.html")
 ```
+
+```{r}
+#combining plots to make one page html for GB N/S and DB N/S - did not work very well as the legends combine and the titles disappear
+library(patchwork)
+
+combined_GB_plots <- subplot(
+  plotly_all_n_gb_sensors_plot, 
+  plotly_all_s_gb_sensors_plot, 
+  nrows = 2
+)
+
+#exporting as html
+htmlwidgets::saveWidget(combined_GB_plots, "combined_GB_plots.html")
+```
+
+\
 
 \
