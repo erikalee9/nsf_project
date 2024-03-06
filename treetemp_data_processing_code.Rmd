@@ -535,39 +535,7 @@ pers_s_gb_vs_db_plot <- ggplot() +
 ggplotly(pers_s_gb_vs_db_plot)
 ```
 
-Plotting S_GB with SWin/out patterns
-
 ```{r}
-
-#install.packages("patchwork")
-library(patchwork)
-
-#combining datasets of pers_s_gb and pers_rad
-pers_s_db_rad_combined <- left_join(pers_s_db_clean, pers_burned_rad, by = "datetime")
-
-#create two seperate plots for temperature and radiation
-pers_s_db_rad1 <- ggplot(data = pers_s_db_rad_combined) +
-  geom_line(aes(x = datetime, y = temp, color = tree_name, linetype = "South"), alpha = 0.5) +
-  scale_color_manual(values = c("blue", "green"), name = NULL) +
-  scale_linetype_manual(values = "solid", name = NULL) +
-  theme(aspect.ratio = 1) +
-  labs(x = "Date", y = "Temperature")
-
-ggplotly(pers_s_db_rad1)
-
-pers_s_db_rad2 <- ggplot(data = pers_s_db_rad_combined) +
-  geom_line(aes(x = datetime, y = SWin_Avg, linetype = "Swin_Avg"), color = "red", alpha = 0.3) +
-  geom_line(aes(x = datetime, y = SWout_Avg, linetype = "SWout_Avg"), color = "black", alpha = 0.3) +
-  scale_linetype_manual(values = c("solid", "solid"), name = NULL) +
-  theme(aspect.ratio = 1) +
-  labs(x = "Datetime", y = "Solar radiation (W/m2)")
-
-ggplotly(pers_s_db_rad2)
-
-#create a combined plot with the two plots above stacked
-pers_s_db_rad_combined_plot <- subplot(pers_s_db_rad2, pers_s_db_rad1, nrows = 2)
-
-ggplotly(pers_s_db_rad_combined_plot)
 ```
 
 ### 105E Trans Burned Tree Temp Data
