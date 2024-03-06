@@ -14,7 +14,7 @@ knitr::opts_chunk$set(echo = TRUE)
 packages <- c('tidyverse',
               'lterdatasampler', 'dplyr', 'ggplot2', 'readr', 'readxl', 'lubridate', 'plotly', 'openxlsx', 'plotly', 'rstatix')
 
-install.packages(packages)
+#install.packages(packages)
 
 library(tidyverse)
 library(lterdatasampler)
@@ -275,8 +275,8 @@ print(pers_b_histogram)
 pers_n_gb_temp <- pers_b_aspects %>%
   filter(aspect == "north") %>%
   filter(tree_name %in% c("gb_w", "gb_s", "gb_e")) %>%
-  drop_na() %>%
-  filter(aspect == "north" & datetime >= "2023-12-07 00:00:00" & datetime <= "2024-01-10 00:00:00")
+  drop_na()
+  #filter(aspect == "north" & datetime >= "2023-12-07 00:00:00" & datetime <= "2024-01-10 00:00:00")
 
 #glimpse is a different way to view dataset, a bit more clear
 glimpse(pers_n_gb_temp)
@@ -320,8 +320,8 @@ pers_n_gb_clean %>%
 #pers_n_db tree temp comparison
 pers_n_db_temp <- pers_b_aspects %>%
   filter(aspect == "north",tree_name %in% c("db_n", "db_s")) %>%
-  drop_na() %>%
-  filter(aspect == "north" & datetime >= "2023-12-07 00:00:00" & datetime <= "2024-01-10 00:00:00")
+  drop_na()
+  #filter(aspect == "north" & datetime >= "2023-12-07 00:00:00" & datetime <= "2024-01-10 00:00:00")
 
 glimpse(pers_n_db_temp)
 
@@ -345,8 +345,8 @@ pers_n_db_clean %>%
 pers_s_gb_temp <- pers_b_aspects %>%
   filter(aspect == "south") %>%
   filter(tree_name %in% c("gb_w", "gb_s", "gb_e")) %>%
-  drop_na() %>%
-  filter(aspect == "south" & datetime >= "2023-12-07 00:00:00" & datetime <= "2024-01-10 00:00:00")
+  drop_na()
+  #filter(aspect == "south" & datetime >= "2023-12-07 00:00:00" & datetime <= "2024-01-10 00:00:00")
 
 #glimpse is a different way to view dataset, a bit more clear
 glimpse(pers_s_gb_temp)
@@ -406,8 +406,8 @@ print(welch_t_test_result)
 #pers_s_db tree temp comparison
 pers_s_db_temp <- pers_b_aspects %>%
   filter(aspect == "south" & tree_name %in% c("db_n", "db_s")) %>%
-  drop_na() %>%
-  filter(aspect == "south" & datetime >= "2023-12-07 00:00:00" & datetime <= "2024-01-10 00:00:00")
+  drop_na()
+  #filter(aspect == "south" & datetime >= "2023-12-07 00:00:00" & datetime <= "2024-01-10 00:00:00")
 
 glimpse(pers_s_db_temp)
 
@@ -986,12 +986,12 @@ ggplotly(trans_s_gb_vs_db_plot)
 #do stacked plots like I did for radiation in pers_burned area
 ```
 
-```{r}
-#** NEED TO HAVE DATA WITH SAME TIME RANGE BEFORE I CAN DO THIS COMPARISON
+Dead burn comparison
 
-#plotting
+```{r}
+#plotting trans vs persistent db sesnors
 trans_vs_pers_n_db <- ggplot() +
-  geom_line(data = trans_n_db_new, aes(x = datetime, y = temp, color = tree_name, linetype = "North"), linetype = "dashed", alpha = 0.5) +
+  geom_line(data = trans_n_db_new, aes(x = datetime, y = temp, color = tree_name, linetype = "Transitional"), linetype = "dashed", alpha = 0.5) +
   geom_line(data = pers_n_db_new, aes(x = datetime, y = temp, color = tree_name, linetype = "Persistent"), alpha = 0.3) +
 scale_color_manual(values = c("blue", "red", "blue", "red"), name = NULL) +
   scale_linetype_manual(values = c("North" = "dashed", "South" = "solid"), name = "Region") +
@@ -999,4 +999,19 @@ scale_color_manual(values = c("blue", "red", "blue", "red"), name = NULL) +
 #facet_wrap(~tree_name)
 
 ggplotly(trans_vs_pers_n_db)
+```
+
+Green burn comparison
+
+```{r}
+#plotting trans vs persistent gb sesnors
+trans_vs_pers_n_gb <- ggplot() +
+  geom_line(data = trans_n_gb_new, aes(x = datetime, y = temp, color = tree_name, linetype = "Transitional"), linetype = "dashed", alpha = 0.5) +
+  geom_line(data = pers_n_gb_new, aes(x = datetime, y = temp, color = tree_name, linetype = "Persistent"), alpha = 0.3) +
+scale_color_manual(values = c("blue", "red", "blue", "red"), name = NULL) +
+  scale_linetype_manual(values = c("North" = "dashed", "South" = "solid"), name = "Region") +
+  labs(x = "Datetime", y = "Temp (C)", title = "Trans vs Pers GB North Sensors")
+#facet_wrap(~tree_name)
+
+ggplotly(trans_vs_pers_n_gb)
 ```
