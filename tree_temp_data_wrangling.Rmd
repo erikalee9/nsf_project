@@ -58,10 +58,10 @@ all_pers_n_sensors <- pers_n_gb_temp %>%
   select(-"sensor_id") %>%
   mutate(zone = "persistent") %>%
   mutate(burn_status = case_when(
-    tree_name == "gb_s" ~ "gb_s",
-    tree_name == "gb_e" ~ "gb_e",
-    tree_name == "db_s" ~ "db_s",
-    tree_name == "db_n" ~ "db_n",
+    tree_name == "gb_s" ~ "north_gb_s_tree",
+    tree_name == "gb_e" ~ "north_gb_e_tree",
+    tree_name == "db_s" ~ "north_db_s_tree",
+    tree_name == "db_n" ~ "north_db_n_tree",
     TRUE ~ tree_name  # Keep the original value if it doesn't match the conditions
   )) %>%
   filter(!(burn_status == "gb_w"))
@@ -74,10 +74,10 @@ all_trans_n_sensors <- trans_n_gb_temp %>%
   select(-"sensor_id") %>%
   mutate(zone = "transitional") %>%
   mutate(burn_status = case_when(
-    tree_name == "gb_s" ~ "gb_s",
-    tree_name == "gb_n" ~ "gb_n",
-    tree_name == "db_s" ~ "db_s",
-    tree_name == "db_n" ~ "db_n",
+    tree_name == "gb_s" ~ "north_gb_s_tree",
+    tree_name == "gb_n" ~ "north_gb_n_tree",
+    tree_name == "db_s" ~ "north_db_s_tree",
+    tree_name == "db_n" ~ "north_db_n_tree",
     TRUE ~ tree_name  # Keep the original value if it doesn't match the conditions
   ))
 
@@ -93,8 +93,8 @@ pers_n_db_sensors <- pers_n_db_temp %>%
   select(-"sensor_id") %>%
   mutate(zone = "persistent") %>%
   mutate(burn_status = case_when(
-    tree_name == "db_s" ~ "db_s_tree",
-    tree_name == "db_n" ~ "db_n_tree",
+    tree_name == "db_s" ~ "north_db_s_tree",
+    tree_name == "db_n" ~ "north_db_n_tree",
     TRUE ~ tree_name  # Keep the original value if it doesn't match the conditions
   ))
 
@@ -103,8 +103,8 @@ trans_n_db_sensors <- trans_n_db_temp %>%
   select(-"sensor_id") %>%
   mutate(zone = "transitional") %>%
   mutate(burn_status = case_when(
-    tree_name == "db_s" ~ "db_s_tree",
-    tree_name == "db_n" ~ "db_n_tree",
+    tree_name == "db_s" ~ "north_db_s_tree",
+    tree_name == "db_n" ~ "north_db_n_tree",
     TRUE ~ tree_name  # Keep the original value if it doesn't match the conditions
   ))
 ```
@@ -115,7 +115,7 @@ trans_n_db_sensors <- trans_n_db_temp %>%
 all_n_db_sensors_plot <-  ggplot() +
   geom_line(data = trans_n_db_sensors, aes(x = datetime, y = temp, color = burn_status, linetype = "Transitional"), alpha = 0.5) +
   geom_line(data = pers_n_db_sensors, aes(x = datetime, y = temp, color = burn_status, linetype = "Persistent"), alpha = 0.3) +
-scale_color_manual(values = c("blue", "red", "blue", "red"), name = "burnstatus_treename,") +
+scale_color_manual(values = c("blue", "red", "blue", "red"), name = "aspect_burnstatus_treename,") +
   scale_linetype_manual(values = c("solid", "dashed"), name = "Zone") +
   labs(x = "Datetime", y = "Temp (C)", title = "Transitional and Persistent DB North Sensors")
 
@@ -150,8 +150,8 @@ pers_s_db_sensors <- pers_s_db_temp %>%
   select(-"sensor_id") %>%
   mutate(zone = "persistent") %>%
   mutate(burn_status = case_when(
-    tree_name == "db_s" ~ "db_s_tree",
-    tree_name == "db_n" ~ "db_n_tree",
+    tree_name == "db_s" ~ "south_db_s_tree",
+    tree_name == "db_n" ~ "south_db_n_tree",
     TRUE ~ tree_name  # Keep the original value if it doesn't match the conditions
   ))
 
@@ -160,8 +160,8 @@ trans_s_db_sensors <- trans_s_db_temp %>%
   select(-"sensor_id") %>%
   mutate(zone = "transitional") %>%
   mutate(burn_status = case_when(
-    tree_name == "db_s" ~ "db_s_tree",
-    tree_name == "db_n" ~ "db_n_tree",
+    tree_name == "db_s" ~ "south_db_s_tree",
+    tree_name == "db_n" ~ "south_db_n_tree",
     TRUE ~ tree_name  # Keep the original value if it doesn't match the conditions
   ))
 ```
@@ -172,7 +172,7 @@ trans_s_db_sensors <- trans_s_db_temp %>%
 all_s_db_sensors_plot <- ggplot() +
   geom_line(data = trans_s_db_sensors, aes(x = datetime, y = temp, color = burn_status, linetype = "Transitional"), alpha = 0.5) +
   geom_line(data = pers_s_db_sensors, aes(x = datetime, y = temp, color = burn_status, linetype = "Persistent"), alpha = 0.3) +
-  scale_color_manual(values = c("blue", "red", "blue", "red"), name = "burnstatus_treename,") + 
+  scale_color_manual(values = c("blue", "red", "blue", "red"), name = "aspect_burnstatus_treename,") + 
 scale_linetype_manual(values = c("solid", "dashed"), name = "Zone") +
   labs(x = "Datetime", y = "Temp (C)", title = "Transitional and Persistent Dead Burn Tree South Sensors")
 
@@ -209,6 +209,28 @@ library(cowplot)
 combined_db_plots <- plot_grid(all_n_db_sensors_plot, all_s_db_sensors_plot, nrow = 2) 
 
 print(combined_db_plots)
+```
+
+```{r}
+##Creating combined N/S DB Sensor plots
+
+plotly_all_s_db <- ggplotly(all_s_db_sensors_plot)
+plotly_all_n_db <- ggplotly(all_n_db_sensors_plot)
+
+# Combine the two plots vertically
+combined_plot <- subplot(plotly_all_n_db, plotly_all_s_db, nrows = 2, shareX = TRUE)
+
+# Set layout for the combined plot
+combined_ns_db_sensors <- layout(combined_plot, title = "Transitional & Persistent North and South DB Sensors",
+                        xaxis = list(title = "Datetime"),
+                        yaxis = list(title = "Temp (C)"))
+
+# Display the combined plot
+combined_ns_db_sensors
+```
+
+```{r}
+##exporting to html... have not done this yet! Fix colors first?? 
 ```
 
 ```{r}

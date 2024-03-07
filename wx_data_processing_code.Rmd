@@ -101,13 +101,11 @@ pers_burned_wx_15min <- pers_burned_wx_15min_fulldata %>%
   select(datetime, everything()) %>%
   select(-TIMESTAMP)
 
-pers_burned_rad <- pers_burned_wx_15min %>%
-    drop_na() %>%
-  filter(datetime >= "2023-12-07 00:00:00" & datetime <= "2024-01-10 00:00:00") %>%
-  select("datetime","SWin_Avg", "SWout_Avg")
-
-glimpse(pers_burned_rad)
-glimpse(pers_b_aspects)
+#changing datetime to mountain from UTC for weather data
+corrected_pers_burned_wx_15min <- pers_burned_wx_15min %>%
+  mutate(datetime_mountain = with_tz(datetime, "America/Denver")) %>%
+filter(datetime_mountain>= "2023-12-07 00:00:00" & datetime_mountain <= "2024-01-10 00:00:00") %>%
+  select(datetime_mountain, everything())
 ```
 
 ### Pers Unburned - Hourly
@@ -127,8 +125,9 @@ pers_unburned <- pers_unburned_fulldata %>%
 
 ```{r}
 #creating new dataframe for specific dates, radiation and air temp
-pers_burned_rad_air<- pers_burned_wx_15min %>%
-    drop_na() %>%
-  filter(datetime >= "2023-12-07 00:00:00" & datetime <= "2024-01-10 00:00:00") %>%
-  select("datetime", "SWin_Avg", "SWout_Avg", "AirTC_Avg")
+pers_burned_rad_air<- corrected_pers_burned_wx_15min %>%
+  select("datetime_mountain", "SWin_Avg", "SWout_Avg", "AirTC_Avg") %>%
+  #rename datetime_mountain to datetime
+  #rename(datetime = datetime_mountain) %>%
+  filter(datetime_mountain >= "2023-12-19 14:00:00" & datetime_mountain <= "2024-01-10 00:00:00")
 ```

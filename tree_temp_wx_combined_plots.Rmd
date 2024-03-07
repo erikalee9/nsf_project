@@ -33,7 +33,7 @@ setwd("/Volumes/wcnr-network/Research/Kampf/Private/field_data")
 #creating a combined N/S sensors dataframe for persistent trees
 
 pers_b_ns_sensors <- pers_b_aspects %>%
-  filter(datetime >= "2023-12-19 00:00:00" & datetime <= "2024-01-10 00:00:00") %>%
+  filter(datetime>= "2023-12-19 00:00:00" & datetime <= "2024-01-10 00:00:00") %>%
   filter(aspect %in% c("north", "south")) %>%
   select(-sensor_id) %>%
   mutate(burn_status = case_when(
@@ -61,33 +61,57 @@ pers_b_ns_sensors <- pers_b_aspects %>%
 ```
 
 ```{r}
-#creating one dataframe with tree temp, radiation and air temp for one tree
+#plotting above to compare to combined dataframe
 
+pers_b_ns_sensors_plot <- ggplot(data = pers_b_ns_sensors) +
+  geom_line(aes(x = datetime, y = temp, linetype = "s_gb_e_tree", color = "s_gb_e_tree"), linetype = "solid", alpha = 0.5) + 
+  geom_line(aes(x = datetime, y = temp, linetype = "s_db_s_tree", color = "s_db_s_tree"), linetype = "dashed", alpha = 0.5)
+
+ggplotly(pers_b_ns_sensors_plot)
+```
+
+```{r}
+#creating one dataframe with tree temp, radiation and air temp for one tree
 selected_pers_b_tree_rad_airT <- pers_b_aspects %>%
-  filter(datetime >= "2023-12-19 00:00:00" & datetime <= "2024-01-10 00:00:00") %>%
   filter(aspect == "south" & tree_name %in% c("gb_e", "db_s")) %>%
   mutate(full_name = case_when(
     tree_name == "gb_e" & aspect == "south" ~ "s_gb_e_tree",
     tree_name == "db_s" & aspect == "south" ~ "s_db_s_tree",
     TRUE ~ tree_name  # Keep the original value if it doesn't match the conditions
   )) %>%
-  select(-sensor_id) %>% 
-  full_join(pers_burned_rad_air, by = "datetime") %>%
+  select(-sensor_id) %>%
+  filter(datetime >= "2023-12-19 07:00:00" & datetime <= "2024-01-10 00:00:00") %>%
   drop_na()
 ```
 
 ```{r}
-#plotting tree temp and air temp together
-combined_pers_b_treeairT_plot <- ggplot(data = selected_pers_b_tree_rad_airT) +
+##plotting individual plot first before combining
+#plotting above to compare to combined dataframe
+
+pers_b_ns_sensors_plot_V2 <- ggplot(data = selected_pers_b_tree_rad_airT) +
   geom_line(aes(x = datetime, y = temp, linetype = "s_gb_e_tree", color = "s_gb_e_tree"), linetype = "solid", alpha = 0.5) + 
-  geom_line(aes(x = datetime, y = temp, linetype = "s_db_s_tree", color = "s_db_s_tree"), linetype = "dashed", alpha = 0.5) +
-  geom_line(aes(x = datetime, y = AirTC_Avg, color = "AirT (C)"), linetype = "solid", alpha = 0.5) +
+  geom_line(aes(x = datetime, y = temp, linetype = "s_db_s_tree", color = "s_db_s_tree"), linetype = "dashed", alpha = 0.5)
+
+ggplotly(pers_b_ns_sensors_plot_V2)
+```
+
+```{r}
+#plotting tree temp and air temp together
+combined_pers_b_treeairT_plot <- ggplot() +
+  geom_line(data = selected_pers_b_tree_rad_airT, aes(x = datetime, y = temp, linetype = "s_gb_e_tree", color = "s_gb_e_tree"), linetype = "solid", alpha = 0.5) + 
+  
+  geom_line(data = selected_pers_b_tree_rad_airT, aes(x = datetime, y = temp, linetype = "s_db_s_tree", color = "s_db_s_tree"), linetype = "dashed", alpha = 0.5) +
+  
+  geom_line(data = pers_burned_rad_air, aes(x = datetime_mountain, y = AirTC_Avg, color = "AirT (C)"), linetype = "solid", alpha = 0.5) +
   labs(x = "Datetime", y = "Temp (C)", title = "Persistent South Aspect Sensors Tree Temps and Weather") +
+  
   theme_minimal() +
  scale_color_manual(values = c("s_gb_e_tree" = "red", "s_db_s_tree" = "blue", "AirT (C)" = "green")) +
   guides(linetype = guide_legend(title = "Line Type"), color = guide_legend(title = "Color"))
 
-combined_pers_b_treeairT_plot
+ggplotly(combined_pers_b_treeairT_plot)
+
+###*** this is still not working - tree temps are delayed by 7 hours in this plot but NOT in the individual plots or in the dataset. 
 ```
 
 ```{r}
@@ -122,5 +146,5 @@ combined_plot
 
 ```{r}
 #exporting as a html page
-htmlwidgets::saveWidget(combined_plot, "combined_pers_b_south_senors_weather_data.html")
+htmlwidgets::saveWidget(combined_plot, "combined_pers_b_south_senors_weather_data_V2.html")
 ```
