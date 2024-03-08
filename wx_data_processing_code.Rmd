@@ -96,12 +96,6 @@ pers_burned_wx <- pers_burned_wx_fulldata %>%
 pers_burned_wx_15min_fulldata=read_excel('nsf/pers_burned/pers_burned_wx_15min_composite.xlsx')
 
 pers_burned_wx_15min <- pers_burned_wx_15min_fulldata %>%
-  mutate(datetime = if_else(grepl("^\\d{4}-\\d{2}-\\d{2}$", TIMESTAMP), ymd(TIMESTAMP), ymd_hms(TIMESTAMP))) %>%
-  filter(datetime >= ymd_hms("2023-12-07 00:00:00") & datetime <= ymd_hms("2024-01-21 00:00:00")) %>%
-  select(datetime, everything()) %>%
-  select(-TIMESTAMP)
-
-pers_burned_wx_15min <- pers_burned_wx_15min_fulldata %>%
   mutate(datetime = ymd_hms(TIMESTAMP)) %>%
   filter(datetime >= ymd_hms("2023-12-07 00:00:00") & datetime <= ymd_hms("2024-01-21 00:00:00")) %>%
   select(datetime, everything()) %>%
@@ -110,8 +104,14 @@ pers_burned_wx_15min <- pers_burned_wx_15min_fulldata %>%
 #changing datetime to mountain from UTC for weather data
 corrected_pers_burned_wx_15min <- pers_burned_wx_15min %>%
   mutate(datetime_mountain = with_tz(datetime, "America/Denver")) %>%
-filter(datetime_mountain>= "2023-12-07 00:00:00" & datetime_mountain <= "2024-01-10 00:00:00") %>%
+filter(datetime_mountain >= ymd_hms("2023-12-07 00:00:00", tz = 'MST') & datetime_mountain <= ymd_hms("2024-01-10 00:00:00", tz='MST')) %>%
   select(datetime_mountain, everything())
+
+#changing the datetime manually to MST for pers_b_15min_wx
+pers_burned_wx_15min_V2 <- pers_burned_wx_15min_fulldata %>%
+  mutate(datetime = ymd_hms(TIMESTAMP) - hours(7)) %>%
+  filter(datetime >= ymd_hms("2023-12-07 00:00:00", tz = 'MST') & datetime <= ymd_hms("2024-01-21 00:00:00", tz = 'MST')) %>%
+  select(datetime, everything())
 ```
 
 ### Pers Unburned - Hourly
@@ -131,10 +131,7 @@ pers_unburned <- pers_unburned_fulldata %>%
 
 ```{r}
 #creating new dataframe for specific dates, radiation and air temp
-pers_burned_rad_air<- corrected_pers_burned_wx_15min %>%
-  select("datetime_mountain","datetime", "SWin_Avg", "SWout_Avg", "AirTC_Avg") %>%
-  #rename datetime_mountain to datetime
-  #rename(datetime = datetime_mountain) %>%
-  filter(datetime_mountain >= "2023-12-19 07:00:00" & datetime_mountain <= "2024-01-10 00:00:00") %>%
-  mutate(datetime_mountain = with_tz(datetime, "America/Denver"))
+pers_burned_rad_air<- pers_burned_wx_15min_V2 %>%
+  select("datetime", "TIMESTAMP", "SWin_Avg", "SWout_Avg", "AirTC_Avg")
+#datetime column is in MST, TIMESTAMP column is in UTC for this dataframe
 ```
