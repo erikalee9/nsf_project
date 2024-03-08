@@ -240,16 +240,18 @@ plotly_pers_trans_ns_gb <- ggplotly(pers_trans_ns_gb_plot)
 combined_ns_gbdb_plot <- subplot(plotly_pers_trans_ns_db, plotly_pers_trans_ns_gb, nrows = 2, shareX = TRUE)
 
 # Set layout for the combined plot
-combined_ns_gbdb_plot <- layout(combined_ns_gbdn_plot, title = "Transitional and Persistent Sensor Comparison, Dead Burned (top) & Green Burned (bottom)",
-                        xaxis = list(title = "Datetime"),
-                        yaxis = list(title = "Temp (C)"), 
-                        yaxis2 = list(title = "Temp (C)"))
-
-# Display the combined plot
-combined_ns_gbdb_plot
+combined_ns_gbdb_plot <- layout(
+  combined_ns_gbdn_plot,
+  title = list(text = "Transitional and Persistent Sensor Comparison, Dead Burned (top) & Green Burned (bottom)"),
+  xaxis = list(title = "Datetime"),
+  yaxis = list(title = "Temp (C)"),
+  yaxis2 = list(title = "Temp (C)")
+)
 ```
 
 ```{r}
 #exporting as a html page
 htmlwidgets::saveWidget(combined_ns_gbdb_plot, "combined_ns_gbdb_plot.html")
 ```
+
+\
