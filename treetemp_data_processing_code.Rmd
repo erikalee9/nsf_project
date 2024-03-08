@@ -41,7 +41,7 @@ pers_b_tree_composite=read_excel("nsf/105E_pers_burned/105E_pers_b_composite.xls
 
 #filter temp data to full data frame
 pers_b_tree_fulldata <- pers_b_tree_composite %>%
-  mutate(datetime = ymd_hms(TIMESTAMP)) %>%
+  mutate(datetime = ymd_hms(TIMESTAMP, tz = 'MST')) %>%
   select(datetime, everything()) %>%
   select(-c(TIMESTAMP, RECORD))
 
@@ -535,9 +535,6 @@ pers_s_gb_vs_db_plot <- ggplot() +
 ggplotly(pers_s_gb_vs_db_plot)
 ```
 
-```{r}
-```
-
 ### 105E Trans Burned Tree Temp Data
 
 ```{r}
@@ -898,15 +895,15 @@ Plotting DB_N vs DB_S for transitional sites
 #creating a new dataframe with name changes to sensors
 trans_n_db_new <- trans_n_db_temp %>%
   mutate(tree_name = case_when(
-    tree_name == "db_n" ~ "n_db_n",
-    tree_name == "db_s" ~ "n_db_s",
+    tree_name == "db_n" ~ "n_db_n_tree",
+    tree_name == "db_s" ~ "n_db_s_tree",
     TRUE ~ tree_name  # Keep the original value if it doesn't match the conditions
   ))
 
 trans_s_db_new <- trans_s_db_temp %>%
   mutate(tree_name = case_when(
-    tree_name == "db_n" ~ "s_db_n",
-    tree_name == "db_s" ~ "s_db_s",
+    tree_name == "db_n" ~ "s_db_n_tree",
+    tree_name == "db_s" ~ "s_db_s_tree",
     TRUE ~ tree_name  # Keep the original value if it doesn't match the conditions
   ))
 
@@ -949,10 +946,6 @@ ggplotly(trans_s_gb_vs_db_plot)
 ```
 
 ### Comparing Trans vs Pers Sensors
-
-```{r}
-#do stacked plots like I did for radiation in pers_burned area
-```
 
 Dead burn comparison
 
