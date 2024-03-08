@@ -29,11 +29,13 @@ library(here)
 setwd("/Volumes/wcnr-network/Research/Kampf/Private/field_data")
 ```
 
+### Persistent Zone
+
 ```{r}
 #creating a combined N/S sensors dataframe for persistent trees
 
 pers_b_ns_sensors <- pers_b_aspects %>%
-  filter(datetime>= ymd_hms("2023-12-19 07:00:00") & datetime <= ymd_hms("2024-01-10 00:00:00")) %>%
+  filter(datetime>= ymd_hms("2023-12-19 07:00:00", tz = 'MST') & datetime <= ymd_hms("2024-01-10 00:00:00", tz = 'MST')) %>%
   filter(aspect %in% c("north", "south")) %>%
   select(-sensor_id) %>%
   mutate(burn_status = case_when(
@@ -61,22 +63,6 @@ pers_b_ns_sensors <- pers_b_aspects %>%
 ```
 
 ```{r}
-#plotting above to compare to combined dataframe
-
-## tried seperate plots to get the timelines to line up... didn't work
-pers_b_ns_sensors_plot_V2 <- ggplot() +
-  geom_line(data = pers_b_ns_sensors, aes(x = datetime, y = temp, linetype = "s_gb_e_tree", color = "s_gb_e_tree"), linetype = "solid", alpha = 0.5) + 
-  geom_line(data = pers_b_ns_sensors, aes(x = datetime, y = temp, linetype = "s_db_s_tree", color = "s_db_s_tree"), linetype = "dashed", alpha = 0.5) + 
-  geom_line(data = pers_burned_rad_air, aes(x = datetime_mountain, y = AirTC_Avg, color = "AirT (C)"), linetype = "solid", alpha = 0.5) +
-  labs(x = "Datetime", y = "Temp (C)", title = "Persistent South Aspect Sensors Tree Temps and Weather") +
-  theme_minimal() +
- scale_color_manual(values = c("s_gb_e_tree" = "red", "s_db_s_tree" = "blue", "AirT (C)" = "green")) +
-  guides(linetype = guide_legend(title = "Line Type"), color = guide_legend(title = "Color"))
-  
-ggplotly(pers_b_ns_sensors_plot_V2)
-```
-
-```{r}
 #creating one dataframe with tree temp, radiation and air temp for one tree
 selected_pers_b_tree_rad_airT <- pers_b_ns_sensors %>%
   filter(aspect == "south" & tree_name %in% c("gb_e", "db_s")) %>%
@@ -85,29 +71,18 @@ selected_pers_b_tree_rad_airT <- pers_b_ns_sensors %>%
     tree_name == "db_s" & aspect == "south" ~ "s_db_s_tree",
     TRUE ~ tree_name  # Keep the original value if it doesn't match the conditions
   )) %>%
-  filter(datetime >= ymd_hms("2023-12-19 07:00:00") & datetime <= ymd_hms("2024-01-10 00:00:00")) %>%
-  full_join(pers_burned_rad_air, by = 'datetime')
-```
-
-```{r}
-##plotting individual plot first before combining
-#plotting above to compare to combined dataframe
-
-pers_b_ns_sensors_plot_V2 <- ggplot(data = selected_pers_b_tree_rad_airT) +
-  geom_line(aes(x = datetime, y = temp, linetype = "s_gb_e_tree", color = "s_gb_e_tree"), linetype = "solid", alpha = 0.5) + 
-  geom_line(aes(x = datetime, y = temp, linetype = "s_db_s_tree", color = "s_db_s_tree"), linetype = "dashed", alpha = 0.5)
-
-ggplotly(pers_b_ns_sensors_plot_V2)
+  full_join(pers_burned_rad_air, by = 'datetime') %>%
+  filter(datetime>= ymd_hms("2023-12-19 07:00:00") & datetime <= ymd_hms("2024-01-10 00:00:00"))
 ```
 
 ```{r}
 #plotting tree temp and air temp together
-combined_pers_b_treeairT_plot <- ggplot() +
-  geom_line(data = selected_pers_b_tree_rad_airT, aes(x = datetime, y = temp, linetype = "s_gb_e_tree", color = "s_gb_e_tree"), linetype = "solid", alpha = 0.5) + 
+combined_pers_b_treeairT_plot <- ggplot(selected_pers_b_tree_rad_airT) +
+  geom_line(aes(x = datetime, y = temp, linetype = "s_gb_e_tree", color = "s_gb_e_tree"), linetype = "solid", alpha = 0.5) + 
   
-  geom_line(data = selected_pers_b_tree_rad_airT, aes(x = datetime, y = temp, linetype = "s_db_s_tree", color = "s_db_s_tree"), linetype = "dashed", alpha = 0.5) +
+  geom_line (aes(x = datetime, y = temp, linetype = "s_db_s_tree", color = "s_db_s_tree"), linetype = "dashed", alpha = 0.5) +
   
-  geom_line(data = pers_burned_rad_air, aes(x = datetime_mountain, y = AirTC_Avg, color = "AirT (C)"), linetype = "solid", alpha = 0.5) +
+  geom_line(aes(x = datetime, y = AirTC_Avg, color = "AirT (C)"), linetype = "solid", alpha = 0.5) +
   labs(x = "Datetime", y = "Temp (C)", title = "Persistent South Aspect Sensors Tree Temps and Weather") +
   
   theme_minimal() +
@@ -115,8 +90,6 @@ combined_pers_b_treeairT_plot <- ggplot() +
   guides(linetype = guide_legend(title = "Line Type"), color = guide_legend(title = "Color"))
 
 ggplotly(combined_pers_b_treeairT_plot)
-
-###*** this is still not working - tree temps are delayed by 7 hours in this plot but NOT in the individual plots or in the dataset. 
 ```
 
 ```{r}
@@ -151,5 +124,132 @@ combined_plot
 
 ```{r}
 #exporting as a html page
-htmlwidgets::saveWidget(combined_plot, "combined_pers_b_south_senors_weather_data_V2.html")
+htmlwidgets::saveWidget(combined_plot, "combined_pers_b_south_senors_weather_data.html")
+```
+
+### Transitional Zone
+
+```{r}
+#creating new dataframe for persistent site comparison with the correct timeframe 
+
+pers_b_ns_sensors_V2 <- pers_b_aspects %>%
+  filter(datetime>= ymd_hms("2024-02-01 00:00:00") & datetime <= ymd_hms("2024-02-19 00:00:00")) %>%
+  filter(aspect %in% c("north", "south")) %>%
+  select(-sensor_id) %>%
+  mutate(burn_status = case_when(
+    tree_name == "gb_w" ~ "GB",
+    tree_name == "gb_s" ~ "GB",
+    tree_name == "gb_e" ~ "GB",
+    tree_name == "db_n" ~ "DB",
+    tree_name == "db_s" ~ "DB",
+    TRUE ~ tree_name  # Keep the original value if it doesn't match the conditions
+  )) %>%
+  #creating a new column with aspect_burnstatus_treename
+  mutate(full_name = case_when(
+    tree_name == "gb_w" & aspect == "north" ~ "n_gb",
+    tree_name == "gb_s" & aspect == "north" ~ "n_gb",
+    tree_name == "gb_e" & aspect == "north" ~ "n_gb",
+    tree_name == "gb_w" & aspect == "south" ~ "s_gb",
+    tree_name == "gb_s" & aspect == "south" ~ "s_gb",
+    tree_name == "gb_e" & aspect == "south" ~ "s_gb",
+    tree_name == "db_n" & aspect == "north" ~ "n_db",
+    tree_name == "db_s" & aspect == "north" ~ "n_db",
+    tree_name == "db_n" & aspect == "south" ~ "s_db",
+    tree_name == "db_s" & aspect == "south" ~ "s_db",
+    TRUE ~ tree_name  # Keep the original value if it doesn't match the conditions
+  ))
+```
+
+```{r}
+#creating a ns combined dataframe
+trans_b_ns_sensors <- trans_b_aspects %>%
+  filter(datetime>= ymd_hms("2024-02-01 00:00:00") & datetime <= ymd_hms("2024-02-19 00:00:00")) %>%
+  filter(aspect %in% c("north", "south")) %>%
+  select(-sensor_id) %>%
+  mutate(burn_status = case_when(
+    tree_name == "gb_n" ~ "GB",
+    tree_name == "gb_s" ~ "GB",
+    tree_name == "db_n" ~ "DB",
+    tree_name == "db_s" ~ "DB",
+    TRUE ~ tree_name  # Keep the original value if it doesn't match the conditions
+  )) %>%
+  #creating a new column with aspect_burnstatus_treename
+  mutate(full_name = case_when(
+    tree_name == "gb_n" & aspect == "north" ~ "n_gb",
+    tree_name == "gb_s" & aspect == "north" ~ "n_gb",
+    tree_name == "gb_n" & aspect == "south" ~ "s_gb",
+    tree_name == "gb_s" & aspect == "south" ~ "s_gb",
+    tree_name == "db_n" & aspect == "north" ~ "n_db",
+    tree_name == "db_s" & aspect == "north" ~ "n_db",
+    tree_name == "db_n" & aspect == "south" ~ "s_db",
+    tree_name == "db_s" & aspect == "south" ~ "s_db",
+    TRUE ~ tree_name  # Keep the original value if it doesn't match the conditions
+  ))
+```
+
+```{r}
+#comparison individual trees with ns sensors for pers and transitonal zones
+trans_b_ns_gb_sensors <- trans_b_ns_sensors %>%
+  filter(tree_name %in% c("gb_s")) %>%
+  mutate(zone = "transitional")
+  
+pers_b_ns_gb_sensors <- pers_b_ns_sensors_V2 %>%
+  filter(tree_name %in% c("gb_s")) %>%
+  mutate(zone = "persistent")
+
+trans_b_ns_db_sensors <- trans_b_ns_sensors %>%
+  filter(tree_name %in% c("db_s")) %>%
+  mutate(zone = "transitional")
+
+pers_b_ns_db_sensors <- pers_b_ns_sensors_V2 %>%
+  filter(tree_name %in% c("db_s")) %>%
+   mutate(zone = "persistent")
+```
+
+```{r}
+#plotting individual tree comparisons between zones
+
+## pers vs trans gb sensors
+pers_trans_ns_gb_plot <- ggplot() + 
+geom_line(data = trans_b_ns_gb_sensors, aes(x = datetime, y = temp, color = full_name, linetype = "transitional"), alpha = 0.5) +
+  geom_line(data = pers_b_ns_gb_sensors, aes(x = datetime, y = temp, color = full_name, linetype = "persistent"), alpha = 0.5) +
+scale_color_manual(values = c("cyan2", "red", "cyan2", "red"), name = "sensoraspect_burnstatus,") +
+  scale_linetype_manual(values = c("solid", "dashed"), name = "zone") +
+  labs(x = "Datetime", y = "Temp (C)", title = "Transitional and Persistent Green Burn Sensors by Aspect")
+
+ggplotly(pers_trans_ns_gb_plot)
+
+## pers vs trans db sensors
+pers_trans_ns_db_plot <- ggplot() + 
+geom_line(data = trans_b_ns_db_sensors, aes(x = datetime, y = temp, color = full_name, linetype = "transitional"), alpha = 0.5) +
+  geom_line(data = pers_b_ns_db_sensors, aes(x = datetime, y = temp, color = full_name, linetype = "persistent"), alpha = 0.5) +
+scale_color_manual(values = c("blue", "brown3", "blue", "brown3"), name = "sensoraspect_burnstatus,") +
+  scale_linetype_manual(values = c("solid", "dashed"), name = "zone") +
+  labs(x = "Datetime", y = "Temp (C)", title = "Transitional and Persistent Dead Burn Sensors by Aspect")
+
+ggplotly(pers_trans_ns_db_plot)
+```
+
+```{r}
+#creating plotly objects and combining plots
+# Convert ggplot objects to plotly objects
+plotly_pers_trans_ns_db <- ggplotly(pers_trans_ns_db_plot)
+plotly_pers_trans_ns_gb <- ggplotly(pers_trans_ns_gb_plot)
+
+# Combine the two plots vertically
+combined_ns_gbdb_plot <- subplot(plotly_pers_trans_ns_db, plotly_pers_trans_ns_gb, nrows = 2, shareX = TRUE)
+
+# Set layout for the combined plot
+combined_ns_gbdb_plot <- layout(combined_ns_gbdn_plot, title = "Transitional and Persistent Sensor Comparison, Dead Burned (top) & Green Burned (bottom)",
+                        xaxis = list(title = "Datetime"),
+                        yaxis = list(title = "Temp (C)"), 
+                        yaxis2 = list(title = "Temp (C)"))
+
+# Display the combined plot
+combined_ns_gbdb_plot
+```
+
+```{r}
+#exporting as a html page
+htmlwidgets::saveWidget(combined_ns_gbdb_plot, "combined_ns_gbdb_plot.html")
 ```
