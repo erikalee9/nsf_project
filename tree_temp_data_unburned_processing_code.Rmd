@@ -13,7 +13,7 @@ knitr::opts_chunk$set(echo = TRUE)
 packages <- c('tidyverse',
               'lterdatasampler', 'dplyr', 'ggplot2', 'readr', 'readxl', 'lubridate', 'plotly', 'openxlsx', 'plotly', 'rstatix', 'htmlwidgets')
 
-install.packages(packages)
+#install.packages(packages)
 
 library(tidyverse)
 library(lterdatasampler)
@@ -84,10 +84,10 @@ pers_ub_aspects <- pers_ub_tree_fulldata %>%
   )) 
 
 #creating dataframes for individual tree
-pers_ub_n <- pers_ub_aspects %>%
+pers_ub_n_tree <- pers_ub_aspects %>%
   filter(sensor_id == c("Temp_C_Avg(1)", "Temp_C_Avg(2)"))
 
-pers_ub_s <- pers_ub_aspects %>%
+pers_ub_s_tree <- pers_ub_aspects %>%
   filter(sensor_id == c("Temp_C_Avg(3)", "Temp_C_Avg(4)"))
 
 #exporting aspect data as excel
