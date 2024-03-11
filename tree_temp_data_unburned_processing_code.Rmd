@@ -240,3 +240,121 @@ plotly_all_pers_ub_sensors_plot <- ggplotly(all_pers_ub_sensors_plot)
 ```{r}
 htmlwidgets::saveWidget(plotly_all_pers_ub_sensors_plot, "all_pers_ub_sensors.html")
 ```
+
+### 105E Trans_ub Tree Temps
+
+```{r}
+trans_ub_tree_composite=read_excel("nsf/105E_trans_unburned/105E_trans_ub_composite.xlsx")
+
+#filter temp data to full data frame
+trans_ub_tree_fulldata <- trans_ub_tree_composite %>%
+  mutate(datetime = ymd_hms(TIMESTAMP)) %>%
+  select(datetime, everything()) %>%
+  select(-c(TIMESTAMP, RECORD))
+
+#adding in an aspect column - WITH ONLY 14 SENSORS!
+trans_ub_aspects <- trans_ub_tree_fulldata %>%
+  pivot_longer(cols = starts_with("Temp"),
+               names_to = "sensor_id",
+               values_to = "temp") %>%
+  #add in aspect column
+  mutate(aspect = ifelse(
+    sensor_id %in% c(
+      "Temp_C_Avg(1)",
+      "Temp_C_Avg(3)"),
+    "north",
+    "other"
+  )) %>%
+  mutate(aspect = ifelse(
+    sensor_id %in% c(
+      "Temp_C_Avg(2)",
+      "Temp_C_Avg(4)"),
+    "south",
+    aspect
+  )) %>%
+  #adding in sensor name column
+  mutate(tree_name = ifelse(
+    sensor_id %in% c(
+      "Temp_C_Avg(1)",
+      "Temp_C_Avg(2)"
+    ),
+    "ub_w",
+    "other"
+  )) %>%
+  mutate(tree_name = ifelse(
+    sensor_id %in% c(
+      "Temp_C_Avg(3)", 
+      "Temp_C_Avg(4)"
+    ),
+    "ub_e",
+    tree_name
+  )) 
+
+#creating dataframes for individual tree
+trans_ub_w_tree <- trans_ub_aspects %>%
+  filter(sensor_id == c("Temp_C_Avg(1)", "Temp_C_Avg(2)"))
+
+trans_ub_e_tree <- trans_ub_aspects %>%
+  filter(sensor_id == c("Temp_C_Avg(3)", "Temp_C_Avg(4)"))
+
+#exporting aspect data as excel
+
+write.xlsx(trans_ub_aspects, "nsf/105E_trans_unburned/105E_trans_ub_aspects.xlsx")
+```
+
+### 105E Trans_ub Plots
+
+```{r}
+#pers_n_ub north tree temp data
+trans_n_ub_temp <- trans_ub_aspects %>%
+  filter(aspect == "north") %>%
+  filter(tree_name %in% c("ub_w", "ub_e")) %>%
+  drop_na()
+
+#pers_s_ub south tree temp data
+trans_s_ub_temp <- trans_ub_aspects %>%
+  filter(aspect == "south") %>%
+  filter(tree_name %in% c("ub_w", "ub_e")) %>%
+  drop_na()
+```
+
+```{r}
+#creating north vs south sensor dataframes
+
+##north dataframe
+all_trans_ub_n_sensors <- trans_n_ub_temp %>%
+  filter(tree_name %in% c("ub_e", "ub_w")) %>%
+  mutate(zone = "transitional") %>%
+  select(-sensor_id) %>%
+  mutate(burn_status = case_when(
+    tree_name == "ub_w" ~ "n_ub_w_tree",
+    tree_name == "ub_e" ~ "n_ub_e_tree",
+    TRUE ~ tree_name  # Keep the original value if it doesn't match the conditions
+  ))
+
+##south dataframe
+all_trans_ub_s_sensors <- trans_s_ub_temp %>%
+  filter(tree_name %in% c("ub_w", "ub_e")) %>%
+  mutate(zone = "transitional") %>%
+  select(-sensor_id) %>%
+  mutate(burn_status = case_when(
+    tree_name == "ub_w" ~ "s_ub_w_tree",
+    tree_name == "ub_e" ~ "s_ub_e_tree",
+    TRUE ~ tree_name  # Keep the original value if it doesn't match the conditions
+  ))
+```
+
+Plotting north_ub and south_ub sensors
+
+```{r}
+#facet wrapped plots by tree
+trans_ub_n_s_gb_plot <- ggplot() +
+  geom_line(data = all_trans_ub_n_sensors, aes(x = datetime, y = temp, color = burn_status, linetype = "North"), alpha = 0.5) +
+  geom_line(data = all_trans_ub_s_sensors, aes(x = datetime, y = temp, color = burn_status, linetype = "South"), alpha = 0.3) +
+  scale_color_manual(values = c("blue", "red", "blue", "red"), name = NULL) +
+scale_linetype_manual(values = c("solid", "dashed"), name = "Zone") +
+  labs(x = "Datetime", y = "Temp (C)", title = "Pers UB North and South Sensors")
+#facet_wrap(~tree_name)
+
+ggplotly(trans_ub_n_s_gb_plot)
+```
