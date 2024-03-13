@@ -60,6 +60,27 @@ pers_b_ns_sensors <- pers_b_aspects %>%
     tree_name == "db_s" & aspect == "south" ~ "s_db_s_tree",
     TRUE ~ tree_name  # Keep the original value if it doesn't match the conditions
   ))
+
+#creating individual tree sensors for south db/gb sensors
+pers_s_gb_e <- pers_b_ns_sensors %>%
+  filter(full_name == "s_gb_e_tree")
+
+pers_s_db_s <- pers_b_ns_sensors %>%
+  filter(full_name == "s_db_s_tree")
+
+#creating individual tree dataframe for north gb/db sensors
+
+pers_n_gb_e <- pers_b_ns_sensors %>%
+  filter(full_name == "n_gb_e_tree")
+
+pers_n_db_e <- pers_b_ns_sensors %>%
+  filter(full_name == "n_db_s_tree")
+
+#creating a pers_unburned dataframe of south sensors only to use in combined plot - south unburned tree, south sensor
+
+pers_s_ub_s <- pers_ub_s_tree %>%
+  filter(aspect == "south") %>%
+  mutate(full_name = "s_ub_s_tree")
 ```
 
 ```{r}
@@ -77,12 +98,12 @@ selected_pers_b_tree_rad_airT <- pers_b_ns_sensors %>%
 
 ```{r}
 #plotting tree temp and air temp together
-combined_pers_b_treeairT_plot <- ggplot(selected_pers_b_tree_rad_airT) +
-  geom_line(aes(x = datetime, y = temp, linetype = "s_gb_e_tree", color = "s_gb_e_tree"), linetype = "solid", alpha = 0.5) + 
-  
-  geom_line (aes(x = datetime, y = temp, linetype = "s_db_s_tree", color = "s_db_s_tree"), linetype = "dashed", alpha = 0.5) +
-  
-  geom_line(aes(x = datetime, y = AirTC_Avg, color = "AirT (C)"), linetype = "solid", alpha = 0.5) +
+combined_pers_b_treeairT_plot <- ggplot() +
+  geom_line(data = pers_s_gb_e, aes(x = datetime, y = temp, group = "s_gb_e_tree", color = "s_gb_e_tree", ), linetype = "solid", alpha = 0.5) + 
+  geom_line (data = pers_s_db_s, aes(x = datetime, y = temp, group = "s_db_s_tree", color = "s_db_s_tree"), linetype = "dashed", alpha = 0.5) +
+    #removed unburned version because we don't have datetime stamps that match yet...
+  #geom_line (data = pers_s_ub_s, aes(x = datetime, y = temp, group = "s_ub_s_tree", color = "s_ub_s_tree"), linetype = "solid", alpha = 0.5) +
+  geom_line(data = selected_pers_b_tree_rad_airT, aes(x = datetime, y = AirTC_Avg, color = "AirT (C)"), linetype = "solid", alpha = 0.5) +
   labs(x = "Datetime", y = "Temp (C)", title = "Persistent South Aspect Sensors Tree Temps and Weather") +
   
   theme_minimal() +
@@ -128,6 +149,48 @@ htmlwidgets::saveWidget(combined_plot, "combined_pers_b_south_senors_weather_dat
 ```
 
 ### Transitional Zone
+
+Transitional Tree temps, air temp and SWin comparison
+
+```{r}
+#creating individual tree sensors for south db/gb sensors
+trans_s_gb_s <- trans_b_ns_sensors %>%
+  filter(full_name == "s_gb_s_tree")
+
+trans_s_db_s <- trans_b_ns_sensors %>%
+  filter(full_name == "s_db_s_tree")
+
+#creating individual tree dataframe for north gb/db sensors on south tree
+
+trans_n_gb_s <- trans_b_ns_sensors %>%
+  filter(full_name == "n_gb_s_tree")
+
+trans_n_db_s <- trans_b_ns_sensors %>%
+  filter(full_name == "n_db_s_tree")
+
+#creating a pers_unburned dataframe of south sensors only to use in combined plot - south unburned tree, south sensor
+
+trans_s_ub_e <- trans_ub_e_tree %>%
+  filter(aspect == "south") %>%
+  mutate(full_name = "s_ub_e_tree") %>%
+  filter(datetime >= ymd_hms("2024-02-01 00:00:00", tz = 'MST') & datetime <= ymd_hms("2024-02-19 00:00:00", tz = 'MST'))
+```
+
+```{r}
+#plotting tree temp and air temp together
+combined_trans_b_treeairT_plot <- ggplot() +
+  geom_line(data = trans_s_gb_s, aes(x = datetime, y = temp, group = "s_gb_s_tree", color = "s_gb_s_tree", ), linetype = "solid", alpha = 0.5) + 
+  geom_line (data = trans_s_db_s, aes(x = datetime, y = temp, group = "s_db_s_tree", color = "s_db_s_tree"), linetype = "dashed", alpha = 0.5) +
+    #removed unburned version because we don't have datetime stamps that match yet...
+  geom_line (data = trans_s_ub_e, aes(x = datetime, y = temp, group = "s_ub_s_tree", color = "s_ub_e_tree"), linetype = "solid", alpha = 0.5) +
+  geom_line(data = trans_burned_rad_air, aes(x = datetime, y = AirT_C, color = "AirT (C)"), linetype = "solid", alpha = 0.5) +
+  labs(x = "Datetime", y = "Temp (C)", title = "Transitional South Aspect Sensors Tree Temps and Weather",  color = "sensoraspect_burnstatus_treename") +
+  
+  theme_minimal() +
+ scale_color_manual(values = c("s_gb_s_tree" = "red", "s_db_s_tree" = "blue", "s_ub_e_tree" = "black", "AirT (C)" = "green")) + guides(linetype = guide_legend(title = "Line Type"))  # Removed the color legend title since we manually specified it in labs()
+
+ggplotly(combined_trans_b_treeairT_plot)
+```
 
 ```{r}
 #creating new dataframe for persistent site comparison with the correct timeframe 
@@ -175,14 +238,14 @@ trans_b_ns_sensors <- trans_b_aspects %>%
   )) %>%
   #creating a new column with aspect_burnstatus_treename
   mutate(full_name = case_when(
-    tree_name == "gb_n" & aspect == "north" ~ "n_gb",
-    tree_name == "gb_s" & aspect == "north" ~ "n_gb",
-    tree_name == "gb_n" & aspect == "south" ~ "s_gb",
-    tree_name == "gb_s" & aspect == "south" ~ "s_gb",
-    tree_name == "db_n" & aspect == "north" ~ "n_db",
-    tree_name == "db_s" & aspect == "north" ~ "n_db",
-    tree_name == "db_n" & aspect == "south" ~ "s_db",
-    tree_name == "db_s" & aspect == "south" ~ "s_db",
+    tree_name == "gb_n" & aspect == "north" ~ "n_gb_n_tree",
+    tree_name == "gb_s" & aspect == "north" ~ "n_gb_s_tree",
+    tree_name == "gb_n" & aspect == "south" ~ "s_gb_n_tree",
+    tree_name == "gb_s" & aspect == "south" ~ "s_gb_s_tree",
+    tree_name == "db_n" & aspect == "north" ~ "n_db_n_tree",
+    tree_name == "db_s" & aspect == "north" ~ "n_db_s_tree",
+    tree_name == "db_n" & aspect == "south" ~ "s_db_n_tree",
+    tree_name == "db_s" & aspect == "south" ~ "s_db_s_tree",
     TRUE ~ tree_name  # Keep the original value if it doesn't match the conditions
   ))
 ```
