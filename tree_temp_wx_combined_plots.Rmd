@@ -193,6 +193,42 @@ ggplotly(combined_trans_b_treeairT_plot)
 ```
 
 ```{r}
+trans_radiation_plot <- ggplot(data = trans_burned_rad_air) +
+  geom_line(aes(x = datetime, y = SWin_Avg, color = "SWin_Avg")) +
+  labs(x = "Datetime", y = "SWin (w/m2)", title = "Incoming SW Radiation") +
+  scale_color_manual(values = c("SWin_Avg" = "orange")) +
+  guides(linetype = guide_legend(title = "Line Type"))
+
+ggplotly(trans_radiation_plot)
+```
+
+```{r}
+## transitional - creating a combined plot of both plots on one page!
+# Convert ggplot objects to plotly objects
+plotly_trans_b_treeairT <- ggplotly(combined_trans_b_treeairT_plot)
+plotly_trans_b_rad <- ggplotly(trans_radiation_plot)
+
+# Combine the two plots vertically
+trans_combined_plot <- subplot(plotly_trans_b_treeairT, plotly_trans_b_rad, nrows = 2, shareX = TRUE)
+
+# Set layout for the combined plot
+trans_combined_plot <- layout(combined_plot, title = "Transitional South Aspect Sensors Tree Temps, Air Temp and Incoming SW radiation",
+                        xaxis = list(title = "Datetime"),
+                        yaxis = list(title = "Temp (C)"), 
+                        yaxis2 = list(title = "SWin (W/m2)"),
+                       showlegend = TRUE,  # Ensure legend is shown
+         legend = list(title = list(text = "sensoraspect_burnstatus_treename")))  # Assigning the legend title
+
+# Display the combined plot
+trans_combined_plot
+```
+
+```{r}
+#exporting as a html page
+htmlwidgets::saveWidget(combined_plot, "combined_trans_b_south_senors_weather_data.html")
+```
+
+```{r}
 #creating new dataframe for persistent site comparison with the correct timeframe 
 
 pers_b_ns_sensors_V2 <- pers_b_aspects %>%
