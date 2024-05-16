@@ -135,3 +135,18 @@ pers_burned_rad_air<- pers_burned_wx_15min_V2 %>%
   select("datetime", "TIMESTAMP", "SWin_Avg", "SWout_Avg", "AirTC_Avg")
 #datetime column is in MST, TIMESTAMP column is in UTC for this dataframe
 ```
+
+### Trans Burned Rad/Air T dataframe
+
+```{r}
+#creating new dataframe for specific dates, radiation and air temp
+trans_burned_rad_air<- trans_burned_wx_15min %>%
+  filter(!is.na(SWin_Avg)) %>%
+  select("datetime", "SWin_Avg", "SWout_Avg", "AirT_C") %>%
+  #rounding SWin and SWout numbers to two decimals
+  mutate(
+    SWin_Avg = round(as.numeric(SWin_Avg), digits = 2),
+    SWout_Avg = round(as.numeric(SWout_Avg), digits = 2)
+  ) %>%
+  filter(datetime >= ymd_hms("2024-02-01 00:00:00", tz = 'MST') & datetime <= ymd_hms("2024-02-19 00:00:00", tz = 'MST'))
+```

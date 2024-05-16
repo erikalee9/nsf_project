@@ -353,7 +353,7 @@ trans_ub_n_s_gb_plot <- ggplot() +
   geom_line(data = all_trans_ub_s_sensors, aes(x = datetime, y = temp, color = burn_status, linetype = "South"), alpha = 0.3) +
   scale_color_manual(values = c("blue", "red", "blue", "red"), name = NULL) +
 scale_linetype_manual(values = c("solid", "dashed"), name = "Zone") +
-  labs(x = "Datetime", y = "Temp (C)", title = "Pers UB North and South Sensors")
+  labs(x = "Datetime", y = "Temp (C)", title = "Transitional UB North and South Sensors")
 #facet_wrap(~tree_name)
 
 ggplotly(trans_ub_n_s_gb_plot)

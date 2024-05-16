@@ -24,7 +24,6 @@ library(plotly)
 library(rstatix)
 library(htmlwidgets)
 library(patchwork)
-library(here)
 
 setwd("/Volumes/wcnr-network/Research/Kampf/Private/field_data")
 ```
