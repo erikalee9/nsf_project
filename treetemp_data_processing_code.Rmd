@@ -45,7 +45,7 @@ pers_b_tree_fulldata <- pers_b_tree_composite %>%
   select(datetime, everything()) %>%
   select(-c(TIMESTAMP, RECORD))
 
-#adding in an aspect column - WITH ONLY 14 SENSORS!
+#adding in an aspect column
 pers_b_aspects <- pers_b_tree_fulldata %>%
   pivot_longer(cols = starts_with("Temp"),
                names_to = "sensor_id",
