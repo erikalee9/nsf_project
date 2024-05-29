@@ -10,10 +10,10 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ```{r}
-packages <- c('tidyverse',
-              'lterdatasampler', 'dplyr', 'ggplot2', 'readr', 'readxl', 'lubridate', 'plotly', 'openxlsx', 'plotly')
+#packages <- c('tidyverse',
+             # 'lterdatasampler', 'dplyr', 'ggplot2', 'readr', #'readxl', 'lubridate', 'plotly', 'openxlsx', 'plotly')
 
-install.packages(packages)
+#install.packages(packages)
 
 library(tidyverse)
 library(lterdatasampler)
@@ -44,7 +44,7 @@ trans_burned_met$Date = as_date(trans_burned_met$datetime, tz="MST", format="%m/
 ### Trans Burned (Clearing) - Hourly
 
 ```{r}
-#read in trans_burned weather station data
+#read in trans_burned weather station data - 30 minute data
 trans_burned_wx_composite = read_excel('nsf/trans_burned/trans_burned_wx_composite.xlsx')
 
 #convert datetime column to date/time

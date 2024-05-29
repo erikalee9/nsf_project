@@ -54,7 +54,7 @@ setwd("/Volumes/wcnr-network/Research/Kampf/Private/field_data")
 all_pers_n_sensors <- pers_n_gb_temp %>%
   full_join(pers_n_db_temp) %>%
   #select("tree_name" == c("gb_e", "db_n")) %>%
-  filter(datetime >= "2024-01-31 12:00:00" & datetime <= "2024-02-19 00:00:00") %>%
+  filter(datetime >= "2024-01-31 12:00:00") %>%
   select(-"sensor_id") %>%
   mutate(zone = "persistent") %>%
   mutate(burn_status = case_when(
@@ -69,7 +69,7 @@ all_pers_n_sensors <- pers_n_gb_temp %>%
 ##transitional_n sensors
 all_trans_n_sensors <- trans_n_gb_temp %>%
   full_join(trans_n_db_temp) %>%
-  filter(datetime >= "2024-01-31 12:00:00" & datetime <= "2024-02-19 00:00:00") %>%
+  filter(datetime >= "2024-01-31 12:00:00") %>%
   #select("tree_name" == c("gb_n", "db_n")) %>%
   select(-"sensor_id") %>%
   mutate(zone = "transitional") %>%
@@ -89,7 +89,7 @@ all_n_sensors <- all_pers_n_sensors %>%
 ```{r}
 ##creating dataframes for pers_n_db and trans_n_db with two trees per dataframe, then combining into one dataframe 
 pers_n_db_sensors <- pers_n_db_temp %>%
-  filter(datetime >= "2024-01-31 12:00:00" & datetime <= "2024-02-19 00:00:00") %>%
+  filter(datetime >= "2024-01-31 12:00:00") %>%
   select(-"sensor_id") %>%
   mutate(zone = "persistent") %>%
   mutate(burn_status = case_when(
@@ -99,7 +99,7 @@ pers_n_db_sensors <- pers_n_db_temp %>%
   ))
 
 trans_n_db_sensors <- trans_n_db_temp %>%
-  filter(datetime >= "2024-01-31 12:00:00" & datetime <= "2024-02-19 00:00:00") %>%
+  filter(datetime >= "2024-01-31 12:00:00") %>%
   select(-"sensor_id") %>%
   mutate(zone = "transitional") %>%
   mutate(burn_status = case_when(
@@ -131,6 +131,7 @@ htmlwidgets::saveWidget(plotly_all_n_db_sensors_plot, "all_n_db_sensors_plot.htm
 ```
 
 ```{r}
+##NOT USING THIS CODE CHUNK!
 all_n_db_sensors_plot_dml <- rvg::dml(ggobj = all_n_db_sensors_plot)
 
 #initializing powerpoint slide
@@ -146,7 +147,7 @@ officer::read_pptx() %>%
 ```{r}
 ##creating dataframes for pers_s_db and trans_s_db with two trees per dataframe, then combining into one dataframe 
 pers_s_db_sensors <- pers_s_db_temp %>%
-  filter(datetime >= "2024-01-31 12:00:00" & datetime <= "2024-02-19 00:00:00") %>%
+  filter(datetime >= "2024-01-31 12:00:00") %>%
   select(-"sensor_id") %>%
   mutate(zone = "persistent") %>%
   mutate(burn_status = case_when(
@@ -156,7 +157,7 @@ pers_s_db_sensors <- pers_s_db_temp %>%
   ))
 
 trans_s_db_sensors <- trans_s_db_temp %>%
-  filter(datetime >= "2024-01-31 12:00:00" & datetime <= "2024-02-19 00:00:00") %>%
+  filter(datetime >= "2024-01-31 12:00:00") %>%
   select(-"sensor_id") %>%
   mutate(zone = "transitional") %>%
   mutate(burn_status = case_when(
@@ -168,7 +169,6 @@ trans_s_db_sensors <- trans_s_db_temp %>%
 
 ```{r}
 #plotting all_s_db_sensors_plot 
-
 all_s_db_sensors_plot <- ggplot() +
   geom_line(data = trans_s_db_sensors, aes(x = datetime, y = temp, color = burn_status, linetype = "Transitional"), alpha = 0.5) +
   geom_line(data = pers_s_db_sensors, aes(x = datetime, y = temp, color = burn_status, linetype = "Persistent"), alpha = 0.3) +
@@ -236,7 +236,7 @@ combined_ns_db_sensors
 ```{r}
 ##creating dataframes for pers_n_gb and trans_n_gb with two trees per dataframe, then combining into one dataframe 
 pers_n_gb_sensors <- pers_n_gb_temp %>%
-  filter(datetime >= "2024-01-31 12:00:00" & datetime <= "2024-02-19 00:00:00") %>%
+  filter(datetime >= "2024-01-31 12:00:00") %>%
   select(-"sensor_id") %>%
   mutate(zone = "persistent") %>%
   mutate(burn_status = case_when(
@@ -247,7 +247,7 @@ pers_n_gb_sensors <- pers_n_gb_temp %>%
   filter(!(burn_status == "gb_w"))
 
 trans_n_gb_sensors <- trans_n_gb_temp %>%
-  filter(datetime >= "2024-01-31 12:00:00" & datetime <= "2024-02-19 00:00:00") %>%
+  filter(datetime >= "2024-01-31 12:00:00") %>%
   select(-"sensor_id") %>%
   mutate(zone = "transitional") %>%
   mutate(burn_status = case_when(
@@ -261,7 +261,7 @@ trans_n_gb_sensors <- trans_n_gb_temp %>%
 ```{r}
 ##creating dataframes for pers_s_gb and trans_s_gb with two trees per dataframe, then combining into one dataframe 
 pers_s_gb_sensors <- pers_s_gb_temp %>%
-  filter(datetime >= "2024-01-31 12:00:00" & datetime <= "2024-02-19 00:00:00") %>%
+  filter(datetime >= "2024-01-31 12:00:00") %>%
   select(-"sensor_id") %>%
   mutate(zone = "persistent") %>%
   mutate(burn_status = case_when(
@@ -273,7 +273,7 @@ pers_s_gb_sensors <- pers_s_gb_temp %>%
   filter(!(burn_status == "gb_w"))
 
 trans_s_gb_sensors <- trans_s_gb_temp %>%
-  filter(datetime >= "2024-01-31 12:00:00" & datetime <= "2024-02-19 00:00:00") %>%
+  filter(datetime >= "2024-01-31 12:00:00") %>%
   select(-"sensor_id") %>%
   mutate(zone = "transitional") %>%
   mutate(burn_status = case_when(

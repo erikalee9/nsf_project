@@ -543,7 +543,7 @@ trans_b_tree_composite=read_excel("nsf/105E_trans_burned/105E_trans_b_composite.
 
 #filter temp data to full data frame
 trans_b_tree_fulldata <- trans_b_tree_composite %>%
-  mutate(datetime = ymd_hms(TIMESTAMP)) %>%
+  mutate(datetime = ymd_hms(TIMESTAMP, tz = 'MST')) %>%
   select(datetime, everything()) %>%
   select(-c(TIMESTAMP, Record)) %>%
   na.omit()
