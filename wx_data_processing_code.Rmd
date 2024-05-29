@@ -56,10 +56,12 @@ trans_burned_wx_composite$datetime <- as.POSIXct(trans_burned_wx_composite$datet
 ```{r}
 #read in 15 minute trans_burned weather station data, minus the geonor data
 
-trans_burned_wx_15min = read_excel('nsf/trans_burned/trans_burned_wx_15min.xlsx')
+trans_burned_wx_15min_r = read_excel('nsf/trans_burned/trans_burned_wx_15min.xlsx')
 
 #convert datetime column to date/time
-trans_burned_wx_15min$datetime <- as.POSIXct(trans_burned_wx_15min$datetime, tz = "MST", format = "%m/%d/%Y %H:%M")
+trans_burned_wx_15min_r$datetime <- as.POSIXct(trans_burned_wx_15min_r$datetime, tz = "MST", format = "%m/%d/%Y %H:%M")
+
+write.xlsx(trans_burned_wx_15min_r, "nsf/trans_burned/trans_burned_wx_15min_r.xlsx")
 ```
 
 ### Trans Burned Geonor
@@ -95,12 +97,6 @@ pers_burned_wx <- pers_burned_wx_fulldata %>%
 ```{r}
 pers_burned_wx_15min_fulldata=read_excel('nsf/pers_burned/pers_burned_wx_15min_composite.xlsx')
 
-pers_burned_wx_15min <- pers_burned_wx_15min_fulldata %>%
-  mutate(datetime = ymd_hms(TIMESTAMP)) %>%
-  filter(datetime >= ymd_hms("2023-12-07 00:00:00") & datetime <= ymd_hms("2024-01-21 00:00:00")) %>%
-  select(datetime, everything()) %>%
-  select(-TIMESTAMP)
-
 #changing datetime to mountain from UTC for weather data
 corrected_pers_burned_wx_15min <- pers_burned_wx_15min %>%
   mutate(datetime_mountain = with_tz(datetime, "America/Denver")) %>%
@@ -108,10 +104,13 @@ filter(datetime_mountain >= ymd_hms("2023-12-07 00:00:00", tz = 'MST') & datetim
   select(datetime_mountain, everything())
 
 #changing the datetime manually to MST for pers_b_15min_wx
-pers_burned_wx_15min_V2 <- pers_burned_wx_15min_fulldata %>%
+pers_burned_wx_15min_r <- pers_burned_wx_15min_fulldata %>%
   mutate(datetime = ymd_hms(TIMESTAMP) - hours(7)) %>%
-  filter(datetime >= ymd_hms("2023-12-07 00:00:00", tz = 'MST') & datetime <= ymd_hms("2024-01-21 00:00:00", tz = 'MST')) %>%
+  filter(datetime >= ymd_hms("2023-12-07 00:00:00", tz = 'MST')) %>% #datetime <= ymd_hms("2024-01-21 00:00:00", tz = 'MST')) %>%
   select(datetime, everything())
+
+#send to n-drive as excel
+write.xlsx(pers_burned_wx_15min_r, "nsf/pers_burned/pers_burned_wx_15min_r.xlsx")
 ```
 
 ### Pers Unburned - Hourly
@@ -131,16 +130,18 @@ pers_unburned <- pers_unburned_fulldata %>%
 
 ```{r}
 #creating new dataframe for specific dates, radiation and air temp
-pers_burned_rad_air<- pers_burned_wx_15min_V2 %>%
+pers_burned_rad_air<- pers_burned_wx_15min_r %>%
   select("datetime", "TIMESTAMP", "SWin_Avg", "SWout_Avg", "AirTC_Avg")
 #datetime column is in MST, TIMESTAMP column is in UTC for this dataframe
+
+write.xlsx(pers_burned_rad_air, "nsf/pers_burned/pers_burned_rad_air.xlsx")
 ```
 
 ### Trans Burned Rad/Air T dataframe
 
 ```{r}
 #creating new dataframe for specific dates, radiation and air temp
-trans_burned_rad_air<- trans_burned_wx_15min %>%
+trans_burned_rad_air<- trans_burned_wx_15min_r %>%
   filter(!is.na(SWin_Avg)) %>%
   select("datetime", "SWin_Avg", "SWout_Avg", "AirT_C") %>%
   #rounding SWin and SWout numbers to two decimals
@@ -148,5 +149,8 @@ trans_burned_rad_air<- trans_burned_wx_15min %>%
     SWin_Avg = round(as.numeric(SWin_Avg), digits = 2),
     SWout_Avg = round(as.numeric(SWout_Avg), digits = 2)
   ) %>%
-  filter(datetime >= ymd_hms("2024-02-01 00:00:00", tz = 'MST') & datetime <= ymd_hms("2024-02-19 00:00:00", tz = 'MST'))
+  filter(datetime >= ymd_hms("2024-02-01 00:00:00", tz = 'MST'))
+  #& datetime <= ymd_hms("2024-02-19 00:00:00", tz = 'MST'))
+
+write.xlsx(trans_burned_rad_air, "nsf/trans_burned/trans_burned_rad_air.xlsx")
 ```

@@ -28,6 +28,17 @@ library(patchwork)
 setwd("/Volumes/wcnr-network/Research/Kampf/Private/field_data")
 ```
 
+```{r}
+#reading in dataframes that I need
+pers_b_aspects <- read_excel("nsf/105E_pers_burned/pers_b_aspects.xlsx")
+
+trans_b_aspects <- read_excel("nsf/105E_trans_burned/trans_b_aspects.xlsx")
+
+pers_burned_rad_air <- read_excel("nsf/pers_burned/pers_burned_rad_air.xlsx")
+
+trans_burned_rad_air <- read_excel("nsf/trans_burned/trans_burned_rad_air.xlsx")
+```
+
 ### Persistent Zone
 
 ```{r}
@@ -83,6 +94,36 @@ pers_s_ub_s <- pers_ub_s_tree %>%
 ```
 
 ```{r}
+#Correct dataframe
+pers_b_ns_sensors_V2 <- pers_b_aspects %>%
+  #filter(datetime>= ymd_hms("2024-02-01 00:00:00") & datetime <= ymd_hms("2024-02-19 00:00:00")) %>%
+  filter(aspect %in% c("north", "south")) %>%
+  select(-sensor_id) %>%
+  mutate(burn_status = case_when(
+    tree_name == "gb_w" ~ "GB",
+    tree_name == "gb_s" ~ "GB",
+    tree_name == "gb_e" ~ "GB",
+    tree_name == "db_n" ~ "DB",
+    tree_name == "db_s" ~ "DB",
+    TRUE ~ tree_name  # Keep the original value if it doesn't match the conditions
+  )) %>%
+  #creating a new column with aspect_burnstatus_treename
+  mutate(full_name = case_when(
+    tree_name == "gb_w" & aspect == "north" ~ "n_gb",
+    tree_name == "gb_s" & aspect == "north" ~ "n_gb",
+    tree_name == "gb_e" & aspect == "north" ~ "n_gb",
+    tree_name == "gb_w" & aspect == "south" ~ "s_gb",
+    tree_name == "gb_s" & aspect == "south" ~ "s_gb",
+    tree_name == "gb_e" & aspect == "south" ~ "s_gb",
+    tree_name == "db_n" & aspect == "north" ~ "n_db",
+    tree_name == "db_s" & aspect == "north" ~ "n_db",
+    tree_name == "db_n" & aspect == "south" ~ "s_db",
+    tree_name == "db_s" & aspect == "south" ~ "s_db",
+    TRUE ~ tree_name  # Keep the original value if it doesn't match the conditions
+  ))
+```
+
+```{r}
 #creating one dataframe with tree temp, radiation and air temp for one tree
 selected_pers_b_tree_rad_airT <- pers_b_ns_sensors %>%
   filter(aspect == "south" & tree_name %in% c("gb_e", "db_s")) %>%
@@ -104,7 +145,6 @@ combined_pers_b_treeairT_plot <- ggplot() +
   #geom_line (data = pers_s_ub_s, aes(x = datetime, y = temp, group = "s_ub_s_tree", color = "s_ub_s_tree"), linetype = "solid", alpha = 0.5) +
   geom_line(data = selected_pers_b_tree_rad_airT, aes(x = datetime, y = AirTC_Avg, color = "AirT (C)"), linetype = "solid", alpha = 0.5) +
   labs(x = "Datetime", y = "Temp (C)", title = "Persistent South Aspect Sensors Tree Temps and Weather") +
-  
   theme_minimal() +
  scale_color_manual(values = c("s_gb_e_tree" = "red", "s_db_s_tree" = "blue", "AirT (C)" = "green")) +
   guides(linetype = guide_legend(title = "Line Type"), color = guide_legend(title = "Color"))
@@ -150,6 +190,33 @@ htmlwidgets::saveWidget(combined_plot, "combined_pers_b_south_senors_weather_dat
 ### Transitional Zone
 
 Transitional Tree temps, air temp and SWin comparison
+
+```{r}
+#creating a ns combined dataframe
+trans_b_ns_sensors <- trans_b_aspects %>%
+  #filter(datetime>= ymd_hms("2024-02-01 00:00:00") & datetime <= ymd_hms("2024-02-19 00:00:00")) %>%
+  filter(aspect %in% c("north", "south")) %>%
+  select(-sensor_id) %>%
+  mutate(burn_status = case_when(
+    tree_name == "gb_n" ~ "GB",
+    tree_name == "gb_s" ~ "GB",
+    tree_name == "db_n" ~ "DB",
+    tree_name == "db_s" ~ "DB",
+    TRUE ~ tree_name  # Keep the original value if it doesn't match the conditions
+  )) %>%
+  #creating a new column with aspect_burnstatus_treename
+  mutate(full_name = case_when(
+    tree_name == "gb_n" & aspect == "north" ~ "n_gb_n_tree",
+    tree_name == "gb_s" & aspect == "north" ~ "n_gb_s_tree",
+    tree_name == "gb_n" & aspect == "south" ~ "s_gb_n_tree",
+    tree_name == "gb_s" & aspect == "south" ~ "s_gb_s_tree",
+    tree_name == "db_n" & aspect == "north" ~ "n_db_n_tree",
+    tree_name == "db_s" & aspect == "north" ~ "n_db_s_tree",
+    tree_name == "db_n" & aspect == "south" ~ "s_db_n_tree",
+    tree_name == "db_s" & aspect == "south" ~ "s_db_s_tree",
+    TRUE ~ tree_name  # Keep the original value if it doesn't match the conditions
+  ))
+```
 
 ```{r}
 #creating individual tree sensors for south db/gb sensors
@@ -227,11 +294,13 @@ trans_combined_plot
 htmlwidgets::saveWidget(combined_plot, "combined_trans_b_south_senors_weather_data.html")
 ```
 
+**Everything above this is not necessary!**
+
 ```{r}
 #creating new dataframe for persistent site comparison with the correct timeframe 
 
 pers_b_ns_sensors_V2 <- pers_b_aspects %>%
-  filter(datetime>= ymd_hms("2024-02-01 00:00:00") & datetime <= ymd_hms("2024-02-19 00:00:00")) %>%
+  #filter(datetime>= ymd_hms("2024-02-01 00:00:00") & datetime <= ymd_hms("2024-02-19 00:00:00")) %>%
   filter(aspect %in% c("north", "south")) %>%
   select(-sensor_id) %>%
   mutate(burn_status = case_when(
@@ -254,33 +323,6 @@ pers_b_ns_sensors_V2 <- pers_b_aspects %>%
     tree_name == "db_s" & aspect == "north" ~ "n_db",
     tree_name == "db_n" & aspect == "south" ~ "s_db",
     tree_name == "db_s" & aspect == "south" ~ "s_db",
-    TRUE ~ tree_name  # Keep the original value if it doesn't match the conditions
-  ))
-```
-
-```{r}
-#creating a ns combined dataframe
-trans_b_ns_sensors <- trans_b_aspects %>%
-  filter(datetime>= ymd_hms("2024-02-01 00:00:00") & datetime <= ymd_hms("2024-02-19 00:00:00")) %>%
-  filter(aspect %in% c("north", "south")) %>%
-  select(-sensor_id) %>%
-  mutate(burn_status = case_when(
-    tree_name == "gb_n" ~ "GB",
-    tree_name == "gb_s" ~ "GB",
-    tree_name == "db_n" ~ "DB",
-    tree_name == "db_s" ~ "DB",
-    TRUE ~ tree_name  # Keep the original value if it doesn't match the conditions
-  )) %>%
-  #creating a new column with aspect_burnstatus_treename
-  mutate(full_name = case_when(
-    tree_name == "gb_n" & aspect == "north" ~ "n_gb_n_tree",
-    tree_name == "gb_s" & aspect == "north" ~ "n_gb_s_tree",
-    tree_name == "gb_n" & aspect == "south" ~ "s_gb_n_tree",
-    tree_name == "gb_s" & aspect == "south" ~ "s_gb_s_tree",
-    tree_name == "db_n" & aspect == "north" ~ "n_db_n_tree",
-    tree_name == "db_s" & aspect == "north" ~ "n_db_s_tree",
-    tree_name == "db_n" & aspect == "south" ~ "s_db_n_tree",
-    tree_name == "db_s" & aspect == "south" ~ "s_db_s_tree",
     TRUE ~ tree_name  # Keep the original value if it doesn't match the conditions
   ))
 ```
@@ -357,7 +399,7 @@ htmlwidgets::saveWidget(combined_ns_gbdb_plot, "combined_ns_gbdb_plot.html")
 ```{r}
 #transitional gb and db combined dataframe
 trans_b_gbdb <- trans_b_aspects %>%
-  filter(datetime>= ymd_hms("2024-02-01 00:00:00") & datetime <= ymd_hms("2024-02-19 00:00:00")) %>%
+  #filter(datetime>= ymd_hms("2024-02-01 00:00:00") & datetime <= ymd_hms("2024-02-19 00:00:00")) %>%
   filter(aspect %in% c("north", "south")) %>%
   filter(tree_name %in% c("gb_s", "db_s")) %>%
   select(-sensor_id) %>%
@@ -379,7 +421,7 @@ trans_b_gbdb <- trans_b_aspects %>%
 ```{r}
 #persistent gb and db combined dataframe
 pers_b_gbdb <- pers_b_aspects %>%
-  filter(datetime>= ymd_hms("2024-02-01 00:00:00") & datetime <= ymd_hms("2024-02-19 00:00:00")) %>%
+  #filter(datetime>= ymd_hms("2024-02-01 00:00:00") & datetime <= ymd_hms("2024-02-19 00:00:00")) %>%
   filter(aspect %in% c("north", "south")) %>%
   filter(tree_name %in% c("gb_e", "db_s")) %>%
   select(-sensor_id) %>%
@@ -456,7 +498,8 @@ htmlwidgets::saveWidget(combined_trans_pers_gbdb, "combined_trans_pers_gbdb.html
 #comparing south tree, n and s sensors of burned vs unburned
 #datatable for pers_e_tree
 pers_gbdb_tree <- pers_b_aspects %>%
-  filter(datetime>= ymd_hms("2024-02-01 00:00:00") & datetime <= ymd_hms("2024-02-19 00:00:00")) %>%
+  filter(datetime>= ymd_hms("2024-02-01 00:00:00")) %>%
+         #datetime <= ymd_hms("2024-02-19 00:00:00")) %>%
   filter(aspect %in% c("north", "south")) %>%
   filter(tree_name %in% c("gb_e", "db_s")) %>%
   select(-sensor_id) %>%
@@ -474,7 +517,8 @@ pers_gbdb_tree <- pers_b_aspects %>%
   #)) 
 
 pers_ub_s_tree_2 <- pers_ub_s_tree %>%
-  filter(datetime>= ymd_hms("2024-02-01 00:00:00") & datetime <= ymd_hms("2024-02-19 00:00:00")) %>%
+  filter(datetime>= ymd_hms("2024-02-01 00:00:00")) %>%
+           #datetime <= ymd_hms("2024-02-19 00:00:00")) %>%
   filter(aspect %in% c("north", "south")) %>%
   filter(tree_name == "ub_s") %>%
   select(-sensor_id) %>%
@@ -488,7 +532,7 @@ pers_ub_s_tree_2 <- pers_ub_s_tree %>%
 
 ```{r}
 #plotting burned vs ub trees
-install.packages('RColorBrewer')
+#install.packages('RColorBrewer')
 
 library(RColorBrewer)
 
@@ -516,3 +560,68 @@ plotly_pers_b_ub <- ggplotly(pers_b_ub_plot)
 #exporting as a html page - currently saving in N-drive field data folder, then I am moving it to my personal project folder on computer
 htmlwidgets::saveWidget(plotly_pers_b_ub, "persistent_burned_unburned_comparison.html")
 ```
+
+### Burned vs Unburned - Transitional
+
+```{r}
+#comparing south_b tree and west_ub tree, n and s sensors of burned vs unburned
+#datatable for trans_west_tree
+trans_gbdb_tree <- pers_b_aspects %>%
+  filter(datetime>= ymd_hms("2024-02-01 00:00:00")) %>%
+         #datetime <= ymd_hms("2024-02-19 00:00:00")) %>%
+  filter(aspect %in% c("north", "south")) %>%
+  filter(tree_name %in% c("gb_s", "db_s")) %>%
+  select(-sensor_id) %>%
+  #creating a new column with aspect_burnstatus_treename
+  mutate(aspect_bs = case_when(
+    tree_name == "gb_s" & aspect == "north" ~ "n_gb",
+    tree_name == "gb_s" & aspect == "south" ~ "s_gb",
+    tree_name == "db_s" & aspect == "north" ~ "n_db",
+    tree_name == "db_s" & aspect == "south" ~ "s_db",
+    TRUE ~ tree_name  # Keep the original value if it doesn't match the conditions
+  ))
+
+trans_ub_w_tree_2 <- trans_ub_w_tree %>%
+  filter(datetime>= ymd_hms("2024-02-01 00:00:00")) %>%
+           #datetime <= ymd_hms("2024-02-19 00:00:00")) %>%
+  filter(aspect %in% c("north", "south")) %>%
+  select(-sensor_id) %>%
+  #creating a new column with aspect_burnstatus_treename
+  mutate(aspect_bs = case_when(
+    tree_name == "ub_w" & aspect == "north" ~ "n_ub",
+    tree_name == "ub_w" & aspect == "south" ~ "s_ub",
+    TRUE ~ tree_name  # Keep the original value if it doesn't match the conditions
+  ))
+```
+
+```{r}
+
+# Create the plot with color-blind friendly colors
+trans_b_ub_plot <- ggplotly(
+  ggplot() +
+    geom_line(data = trans_ub_w_tree_2, aes(x = datetime, y = temp, color = tree_name, linetype = aspect), alpha = 0.8) + 
+    geom_line(data = trans_gbdb_tree, aes(x = datetime, y = temp, color = tree_name, linetype = aspect), alpha = 0.6) +
+    scale_color_manual(values = color_palette, name = "burnstatus_treename,") +
+    labs(x = "Datetime", y = "Temp (C)", title = "Transitional green burned, dead burned and unburned tree sensor comparison, including N and S sensors") +
+    scale_linetype_manual(values = c("solid", "dashed"), name = "Aspect") +  # Flipped the order of linetypes
+    labs(linetype = "aspect")  # Manually setting the legend title
+)
+
+ggplotly(trans_b_ub_plot)
+```
+
+```{r}
+#converting to a plotly
+plotly_trans_b_ub <- ggplotly(trans_b_ub_plot)
+
+#exporting as a html page - currently saving in N-drive field data folder, then I am moving it to my personal project folder on computer
+htmlwidgets::saveWidget(plotly_trans_b_ub, "transitional_burned_unburned_comparison.html")
+```
+
+Data Interpretation
+
+-   db south aspect sensors had the highest temperature for both transitional and persistent sites
+
+-   North DB and GB sensors are all basically identical for persistent and transitional zone (for the most part)
+
+-   

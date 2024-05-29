@@ -276,6 +276,8 @@ pers_n_gb_temp <- pers_b_aspects %>%
   filter(aspect == "north") %>%
   filter(tree_name %in% c("gb_w", "gb_s", "gb_e")) %>%
   drop_na()
+
+write.xlsx(pers_n_gb_temp, "nsf/105E_pers_burned/pers_n_gb_temp.xlsx")
   #filter(aspect == "north" & datetime >= "2023-12-07 00:00:00" & datetime <= "2024-01-10 00:00:00")
 
 #glimpse is a different way to view dataset, a bit more clear
@@ -323,6 +325,8 @@ pers_n_db_temp <- pers_b_aspects %>%
   drop_na()
   #filter(aspect == "north" & datetime >= "2023-12-07 00:00:00" & datetime <= "2024-01-10 00:00:00")
 
+write.xlsx(pers_n_db_temp, "nsf/105E_pers_burned/pers_n_db_temp.xlsx")
+
 glimpse(pers_n_db_temp)
 
 pers_n_db_clean<- pers_n_db_temp
@@ -347,6 +351,8 @@ pers_s_gb_temp <- pers_b_aspects %>%
   filter(tree_name %in% c("gb_w", "gb_s", "gb_e")) %>%
   drop_na()
   #filter(aspect == "south" & datetime >= "2023-12-07 00:00:00" & datetime <= "2024-01-10 00:00:00")
+
+write.xlsx(pers_s_gb_temp, "nsf/105E_pers_burned/pers_s_gb_temp.xlsx")
 
 #glimpse is a different way to view dataset, a bit more clear
 glimpse(pers_s_gb_temp)
@@ -409,6 +415,8 @@ pers_s_db_temp <- pers_b_aspects %>%
   drop_na()
   #filter(aspect == "south" & datetime >= "2023-12-07 00:00:00" & datetime <= "2024-01-10 00:00:00")
 
+write.xlsx(pers_s_db_temp, "nsf/105E_pers_burned/pers_s_db_temp.xlsx")
+
 glimpse(pers_s_db_temp)
 
 pers_s_db_clean<- pers_s_db_temp
@@ -458,6 +466,8 @@ pers_n_gb_new <- pers_n_gb_temp %>%
     TRUE ~ tree_name  # Keep the original value if it doesn't match the conditions
   ))
 
+write.xlsx(pers_n_gb_new, "nsf/105E_pers_burned/pers_n_gb_new.xlsx")
+
 pers_s_gb_new <- pers_s_gb_temp %>%
   mutate(tree_name = case_when(
     tree_name == "gb_w" ~ "s_gb_w",
@@ -465,6 +475,8 @@ pers_s_gb_new <- pers_s_gb_temp %>%
     tree_name == "gb_e" ~ "s_gb_e",
     TRUE ~ tree_name  # Keep the original value if it doesn't match the conditions
   ))
+
+write.xlsx(pers_s_gb_new, "nsf/105E_pers_burned/pers_s_gb_new.xlsx")
 
 #facet wrapped plots by tree
 pers_n_s_gb_plot <- ggplot() +
@@ -490,12 +502,16 @@ pers_n_db_new <- pers_n_db_temp %>%
     TRUE ~ tree_name  # Keep the original value if it doesn't match the conditions
   ))
 
+write.xlsx(pers_n_db_new, "nsf/105E_pers_burned/pers_n_db_new.xlsx")
+
 pers_s_db_new <- pers_s_db_temp %>%
   mutate(tree_name = case_when(
     tree_name == "db_n" ~ "s_db_n",
     tree_name == "db_s" ~ "s_db_s",
     TRUE ~ tree_name  # Keep the original value if it doesn't match the conditions
   ))
+
+write.xlsx(pers_s_db_new, "nsf/105E_pers_burned/pers_s_db_new.xlsx")
 
 #plotting
 pers_n_s_db_plot <- ggplot() +
@@ -592,7 +608,7 @@ mutate(tree_name = ifelse(
 
 #exporting aspect data as excel
 
-write.xlsx(trans_b_aspects, "nsf/105E_trans_burned/105E_trans_b_aspects.xlsx")
+#write.xlsx(trans_b_aspects, "nsf/105E_trans_burned/105E_trans_b_aspects.xlsx")
 
 #creating dataframes for individual tree
 trans_gb_n <- trans_b_aspects %>%
@@ -753,6 +769,8 @@ trans_n_gb_temp <- trans_b_aspects %>%
   drop_na()
   #filter(aspect == "north" & datetime >= "2023-12-07 00:00:00" & datetime <= "2024-01-10 00:00:00")
 
+write.xlsx(trans_n_gb_temp, "nsf/105E_trans_burned/trans_n_gb_temp.xlsx")
+
 #glimpse is a different way to view dataset, a bit more clear
 glimpse(trans_n_gb_temp)
 
@@ -778,6 +796,8 @@ trans_n_db_temp <- trans_b_aspects %>%
   drop_na()
   #filter(aspect == "north" & datetime >= "2023-12-07 00:00:00" & datetime <= "2024-01-10 00:00:00")
 
+write.xlsx(trans_n_db_temp, "nsf/105E_trans_burned/trans_n_db_temp.xlsx")
+
 glimpse(trans_n_db_temp)
 
 trans_n_db_clean<- trans_n_db_temp
@@ -800,6 +820,8 @@ trans_s_gb_temp <- trans_b_aspects %>%
   filter(tree_name %in% c("gb_n", "gb_s")) %>%
   drop_na()
   #filter(aspect == "south" & datetime >= "2023-12-07 00:00:00" & datetime <= "2024-01-10 00:00:00")
+
+write.xlsx(trans_s_gb_temp, "nsf/105E_trans_burned/trans_s_gb_temp.xlsx")
 
 #glimpse is a different way to view dataset, a bit more clear
 glimpse(trans_s_gb_temp)
@@ -839,6 +861,8 @@ trans_s_db_temp <- trans_b_aspects %>%
   drop_na()
   #filter(aspect == "south" & datetime >= "2023-12-07 00:00:00" & datetime <= "2024-01-10 00:00:00")
 
+write.xlsx(trans_s_db_temp, "nsf/105E_trans_burned/trans_s_db_temp.xlsx")
+
 glimpse(trans_s_db_temp)
 
 trans_s_db_clean<- trans_s_db_temp
@@ -870,12 +894,16 @@ trans_n_gb_new <- trans_n_gb_temp %>%
     TRUE ~ tree_name  # Keep the original value if it doesn't match the conditions
   ))
 
+write.xlsx(trans_n_gb_new, "nsf/105E_trans_burned/trans_n_gb_new.xlsx")
+
 trans_s_gb_new <- trans_s_gb_temp %>%
   mutate(tree_name = case_when(
     tree_name == "gb_n" ~ "s_gb_n",
     tree_name == "gb_s" ~ "s_gb_s",
     TRUE ~ tree_name  # Keep the original value if it doesn't match the conditions
   ))
+
+write.xlsx(trans_s_gb_new, "nsf/105E_trans_burned/trans_s_gb_new.xlsx")
 
 #facet wrapped plots by tree
 trans_n_s_gb_plot <- ggplot() +
@@ -900,12 +928,16 @@ trans_n_db_new <- trans_n_db_temp %>%
     TRUE ~ tree_name  # Keep the original value if it doesn't match the conditions
   ))
 
+write.xlsx(trans_n_db_new, "nsf/105E_trans_burned/trans_n_db_new.xlsx")
+
 trans_s_db_new <- trans_s_db_temp %>%
   mutate(tree_name = case_when(
     tree_name == "db_n" ~ "s_db_n_tree",
     tree_name == "db_s" ~ "s_db_s_tree",
     TRUE ~ tree_name  # Keep the original value if it doesn't match the conditions
   ))
+
+write.xlsx(trans_s_db_new, "nsf/105E_trans_burned/trans_s_db_new.xlsx")
 
 #plotting
 trans_n_s_db_plot <- ggplot() +

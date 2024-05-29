@@ -12,8 +12,8 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r}
 {r}
 #installing packages / set working directory
-packages <- c('tidyverse',
-              'lterdatasampler', 'dplyr', 'ggplot2', 'readr', 'readxl', 'lubridate', 'plotly', 'openxlsx', 'plotly', 'rstatix')
+#packages <- c('tidyverse',
+             # 'lterdatasampler', 'dplyr', 'ggplot2', 'readr', 'readxl', 'lubridate', 'plotly', 'openxlsx', 'plotly', 'rstatix')
 
 #install.packages(packages)
 
@@ -45,6 +45,29 @@ library(rvg)
 library(here)
 
 setwd("/Volumes/wcnr-network/Research/Kampf/Private/field_data")
+```
+
+```{r}
+#calling in dataframes as excels fron N-Drive
+pers_b_aspects <- read_excel("nsf/105E_pers_burned/105E_pers_b_aspects.xlsx")
+
+trans_b_aspects <- read_excel("nsf/105E_trans_burned/105E_trans_b_aspects.xlsx")
+
+pers_n_gb_temp <- read_excel("nsf/105E_pers_burned/pers_n_gb_temp.xlsx")
+
+pers_n_db_temp <- read_excel("nsf/105E_pers_burned/pers_n_db_temp.xlsx")
+
+pers_s_gb_temp <- read_excel("nsf/105E_pers_burned/pers_s_gb_temp.xlsx")
+
+pers_s_db_temp <- read_excel("nsf/105E_pers_burned/pers_s_db_temp.xlsx")
+
+trans_n_gb_temp <- read_excel("nsf/105E_trans_burned/trans_n_gb_temp.xlsx")
+
+trans_n_db_temp <- read_excel("nsf/105E_trans_burned/trans_n_db_temp.xlsx")
+
+trans_s_gb_temp <- read_excel("nsf/105E_trans_burned/trans_s_gb_temp.xlsx")
+
+trans_s_db_temp <- read_excel("nsf/105E_trans_burned/trans_s_db_temp.xlsx")
 ```
 
 ```{r}
